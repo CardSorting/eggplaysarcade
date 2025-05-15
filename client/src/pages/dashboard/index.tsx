@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 import AdminDashboard from "./AdminDashboard";
+import DeveloperDashboard from "./DeveloperDashboard";
 
 /**
  * Dashboard router component that directs users to the appropriate
@@ -40,9 +41,7 @@ export default function DashboardRouter() {
       return <AdminDashboard />;
       
     case UserRole.GAME_DEVELOPER:
-      // For now just using the admin dashboard as placeholder
-      // In the future, implement a separate DeveloperDashboard component
-      return <AdminDashboard />;
+      return <DeveloperDashboard />;
       
     case UserRole.PLAYER:
       // For now just using the admin dashboard as placeholder
