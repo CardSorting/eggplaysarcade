@@ -173,81 +173,46 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-80 bg-card border-r">
-        <div className="flex-1 flex flex-col min-h-0 pt-5">
-          <div className="flex items-center px-4 mb-4">
-            <Link href="/" className="flex items-center">
-              <GamepadIcon className="h-6 w-6 text-primary mr-2" />
-              <span className="text-xl font-semibold">Game Portal</span>
-            </Link>
-          </div>
-          
-          {/* User info */}
-          {user && (
-            <div className="px-4 mb-6 flex items-center">
-              <Avatar className="h-9 w-9 mr-3">
-                <AvatarImage src={user.avatarUrl || ""} alt={user.username} />
-                <AvatarFallback>
-                  {user.username?.substring(0, 2).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="font-medium text-sm truncate max-w-[160px]">
-                  {user.username}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {user.role}
-                </span>
-              </div>
-            </div>
-          )}
-          
-          {/* Navigation */}
-          <nav className="flex-1 px-3 space-y-1">
-            {navItems.map((item) => (
-              <NavItem
-                key={item.key || item.href}
-                label={item.label}
-                icon={item.icon}
-                href={item.href}
-                active={
-                  activeTab === (item.key || item.label.toLowerCase()) ||
-                  location === item.href
-                }
-              />
-            ))}
-          </nav>
-          
-          {/* Logout button */}
-          <div className="p-4 border-t">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-3 py-2 text-sm rounded-md text-red-500 hover:bg-red-100/20 transition-colors"
-            >
-              <LogOut className="h-5 w-5 mr-3" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Mobile header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b py-2 px-4">
+    <div className="min-h-screen">
+      {/* Header */}
+      <div className="fixed top-0 left-0 right-0 z-30 bg-background border-b py-2 px-4">
         <div className="flex justify-between items-center">
           <Link href="/" className="flex items-center">
             <GamepadIcon className="h-6 w-6 text-primary mr-2" />
             <span className="text-xl font-semibold">Game Portal</span>
           </Link>
           
-          {/* Mobile user dropdown would go here */}
+          {/* User info and logout */}
+          {user && (
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center">
+                <Avatar className="h-8 w-8 mr-2">
+                  <AvatarImage src={user.avatarUrl || ""} alt={user.username} />
+                  <AvatarFallback>
+                    {user.username?.substring(0, 2).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col mr-4">
+                  <span className="font-medium text-sm">{user.username}</span>
+                  <span className="text-xs text-muted-foreground">{user.role}</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleLogout}
+                className="text-sm px-3 py-1 rounded-md text-red-500 hover:bg-red-100/20 transition-colors"
+              >
+                <LogOut className="h-4 w-4 inline-block mr-1" />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
       
       {/* Main content */}
-      <div className="md:pl-64 flex flex-col flex-1">
-        <main className="flex-1 pt-16 md:pt-0">
+      <div className="flex flex-col flex-1">
+        <main className="flex-1 pt-16">
           {children}
         </main>
       </div>
