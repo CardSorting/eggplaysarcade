@@ -613,10 +613,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Add rejection reason as a review note
-      const noteObj = {
+      const noteObj: ReviewNote = {
         id: `note-${Date.now()}`,
         content: reason,
-        severity: 'critical',
+        severity: 'critical' as 'critical',
         createdAt: new Date(),
         reviewerId: req.user?.id.toString() || '',
         isResolved: false
