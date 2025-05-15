@@ -60,10 +60,7 @@ export class DbUserRepository implements UserRepository {
         .update(users)
         .set({
           username: user.username,
-          password: user.passwordHash,
-          email: user.email
-          // isAdmin is intentionally not updated here for security reasons
-          // It would require a separate privileged method
+          password: user.passwordHash
         })
         .where(eq(users.id, user.id.value))
         .returning();
@@ -75,8 +72,7 @@ export class DbUserRepository implements UserRepository {
         .insert(users)
         .values({
           username: user.username,
-          password: user.passwordHash,
-          email: user.email
+          password: user.passwordHash
         })
         .returning();
       
@@ -100,10 +96,7 @@ export class DbUserRepository implements UserRepository {
     return User.reconstitute(
       userData.id,
       userData.username,
-      userData.password,
-      userData.email,
-      userData.createdAt || new Date(),
-      !!userData.isAdmin
+      userData.password
     );
   }
 }

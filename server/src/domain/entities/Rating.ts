@@ -43,15 +43,14 @@ export class Rating {
     id: number,
     userId: number,
     gameId: number,
-    value: number,
-    createdAt: Date
+    value: number
   ): Rating {
     return new Rating(
       new EntityId(id),
       new EntityId(userId),
       new EntityId(gameId),
       value,
-      createdAt
+      new Date() // Default creation date since our schema doesn't have it yet
     );
   }
 

@@ -119,8 +119,7 @@ export class DbRatingRepository implements RatingRepository {
         .values({
           userId: rating.userId.value,
           gameId: rating.gameId.value,
-          value: rating.value,
-          createdAt: rating.createdAt
+          value: rating.value
         })
         .returning();
       
@@ -145,8 +144,7 @@ export class DbRatingRepository implements RatingRepository {
       ratingData.id,
       ratingData.userId,
       ratingData.gameId,
-      ratingData.value,
-      ratingData.createdAt || new Date()
+      ratingData.value
     );
   }
 }
