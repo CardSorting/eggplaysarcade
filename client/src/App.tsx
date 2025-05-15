@@ -14,8 +14,8 @@ import GameDetail from "@/pages/GameDetail";
 import SubmitGame from "@/pages/SubmitGame";
 import Dashboard from "@/pages/dashboard";
 import Wishlist from "@/pages/Wishlist";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 

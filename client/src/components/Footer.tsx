@@ -27,8 +27,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/categories">
-                  <a className="hover:text-primary transition">Categories</a>
+                <Link href="/categories" className="hover:text-primary transition">
+                  Categories
                 </Link>
               </li>
             </ul>
@@ -38,18 +38,18 @@ export function Footer() {
             <h4 className="font-medium mb-3">For Developers</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/auth/developer">
-                  <a className="hover:text-primary transition">Developer Account</a>
+                <Link href="/auth/developer" className="hover:text-primary transition">
+                  Developer Account
                 </Link>
               </li>
               <li>
-                <Link href="/submit-game">
-                  <a className="hover:text-primary transition">Submit a Game</a>
+                <Link href="/submit-game" className="hover:text-primary transition">
+                  Submit a Game
                 </Link>
               </li>
               <li>
-                <Link href="/developer-docs">
-                  <a className="hover:text-primary transition">Documentation</a>
+                <Link href="/developer-docs" className="hover:text-primary transition">
+                  Documentation
                 </Link>
               </li>
             </ul>
@@ -59,18 +59,18 @@ export function Footer() {
             <h4 className="font-medium mb-3">Legal</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/terms">
-                  <a className="hover:text-primary transition">Terms of Service</a>
+                <Link href="/terms" className="hover:text-primary transition">
+                  Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/privacy">
-                  <a className="hover:text-primary transition">Privacy Policy</a>
+                <Link href="/privacy" className="hover:text-primary transition">
+                  Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/cookies">
-                  <a className="hover:text-primary transition">Cookie Policy</a>
+                <Link href="/cookies" className="hover:text-primary transition">
+                  Cookie Policy
                 </Link>
               </li>
             </ul>
