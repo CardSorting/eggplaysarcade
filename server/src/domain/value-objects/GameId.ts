@@ -1,69 +1,43 @@
-import { v4 as uuidv4 } from 'uuid';
-import { customAlphabet } from 'nanoid';
+import { EntityId } from './EntityId';
 
 /**
- * GameId is a value object that provides a unique, readable ID for games
- * Value objects in DDD are immutable and identified by their value, not by identity
+ * Value object representing a Game ID
+ * 
+ * This follows Domain-Driven Design principles and encapsulates
+ * the concept of a unique game identifier.
  */
-export class GameId {
-  private readonly _value: string;
+export class GameId extends EntityId {
+  /**
+   * Create a GameId from a number
+   * 
+   * @param value The numeric ID
+   * @returns A new GameId instance
+   */
+  static fromNumber(value: number): GameId {
+    return new GameId(value);
+  }
   
   /**
-   * Create a new GameId with a specific value
-   * @param value The string representation of the GameId
-   * @throws Error if the provided ID format is invalid
+   * Create a GameId from a string, parsing it as a number
+   * 
+   * @param value The string representation of the ID
+   * @returns A new GameId instance
    */
-  constructor(value?: string) {
-    if (!value) {
-      // Generate a new ID if none is provided
-      this._value = GameId.generate();
-    } else if (GameId.isValid(value)) {
-      this._value = value;
-    } else {
-      throw new Error(`Invalid GameId format: ${value}`);
+  static fromString(value: string): GameId {
+    const numberValue = parseInt(value, 10);
+    if (isNaN(numberValue)) {
+      throw new Error(`Cannot create GameId from invalid string: ${value}`);
     }
+    return new GameId(numberValue);
   }
-  
+
   /**
-   * Get the string representation of the GameId
+   * Additional validation specific to GameIds
    */
-  get value(): string {
-    return this._value;
-  }
-  
-  /**
-   * Generate a new unique game ID
-   * Format: GAME-XXXX-XXXX-XXXX where X is alphanumeric
-   */
-  static generate(): string {
-    // Using nanoid to generate a readable ID that's shorter than UUIDs
-    // but still has sufficient entropy to avoid collisions
-    const nanoid = customAlphabet('23456789ABCDEFGHJKLMNPQRSTUVWXYZ', 12);
-    const id = nanoid();
+  protected validate(value: string | number): void {
+    super.validate(value);
     
-    // Format into GAME-XXXX-XXXX-XXXX
-    return `GAME-${id.substring(0, 4)}-${id.substring(4, 8)}-${id.substring(8, 12)}`;
-  }
-  
-  /**
-   * Check if a string is a valid GameId
-   */
-  static isValid(value: string): boolean {
-    // Check against the expected format: GAME-XXXX-XXXX-XXXX
-    return /^GAME-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}$/.test(value);
-  }
-  
-  /**
-   * Convert GameId to string for convenience
-   */
-  toString(): string {
-    return this._value;
-  }
-  
-  /**
-   * Check if two GameIds are equal
-   */
-  equals(other: GameId): boolean {
-    return this.value === other.value;
+    // Add game-specific validation logic here if needed
+    // For example, games might have a specific ID format or range
   }
 }

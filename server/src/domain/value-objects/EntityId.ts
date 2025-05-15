@@ -1,22 +1,52 @@
 /**
- * Entity identifier value object
- * Following the Value Object pattern from Domain-Driven Design
+ * Base ValueObject for all entity identifiers
+ * 
+ * This follows Domain-Driven Design principles where IDs are treated as
+ * value objects with their own business logic and validation rules.
  */
-export class EntityId {
-  constructor(public readonly value: number) {
-    if (!Number.isInteger(value) || value <= 0) {
-      throw new Error('Entity ID must be a positive integer');
+export abstract class EntityId {
+  protected readonly value: string | number;
+
+  constructor(value: string | number) {
+    this.validate(value);
+    this.value = value;
+  }
+
+  /**
+   * Validates if the provided value is a valid ID
+   * Subclasses may override with specific validation rules
+   */
+  protected validate(value: string | number): void {
+    if (value === undefined || value === null) {
+      throw new Error('Entity ID cannot be null or undefined');
+    }
+
+    if (typeof value === 'string' && value.trim() === '') {
+      throw new Error('Entity ID cannot be an empty string');
+    }
+
+    if (typeof value === 'number' && (isNaN(value) || value <= 0)) {
+      throw new Error('Entity ID must be a positive number');
     }
   }
 
-  public toString(): string {
+  /**
+   * Gets the ID value
+   */
+  toString(): string {
     return String(this.value);
   }
-  
-  public equals(other: EntityId): boolean {
-    if (!(other instanceof EntityId)) {
+
+  /**
+   * Compare equality with another EntityId
+   */
+  equals(id?: EntityId): boolean {
+    if (id === null || id === undefined) {
       return false;
     }
-    return this.value === other.value;
+    if (!(id instanceof EntityId)) {
+      return false;
+    }
+    return this.toString() === id.toString();
   }
 }

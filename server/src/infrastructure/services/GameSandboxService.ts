@@ -1,167 +1,211 @@
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
-import fs from 'fs/promises';
+import { GameId } from '../../domain/value-objects/GameId';
 
 /**
- * Represents a sandbox instance for a game
+ * Resource limits for a sandboxed game
  */
-interface SandboxInstance {
-  id: string;
-  gameId: number;
-  created: Date;
-  accessed: Date;
-  resourceUsage: ResourceUsage;
+interface ResourceLimits {
+  memory: string;
+  cpu: number;
+  timeout: number;
 }
 
 /**
- * Tracks resource usage for a sandboxed game
+ * Parameters for creating a new game sandbox
  */
-interface ResourceUsage {
-  cpuTime: number;
-  memoryUsage: number;
-  networkRequests: number;
+interface SandboxParams {
+  gameId: GameId;
+  userId: number;
+  gameFiles: Record<string, string>;
+  entryPoint: string;
+  resourceLimits: ResourceLimits;
 }
 
 /**
- * Service responsible for managing game sandboxes
- * This service creates isolated environments for games to run securely
+ * State of a sandbox instance
+ */
+enum SandboxState {
+  STARTING = 'starting',
+  RUNNING = 'running',
+  STOPPED = 'stopped',
+  ERROR = 'error'
+}
+
+/**
+ * Represents a single running sandbox instance
+ */
+class SandboxInstance {
+  private state: SandboxState = SandboxState.STARTING;
+  private url: string;
+  private readonly id: string;
+  private readonly startTime: Date;
+  private errorMessage?: string;
+  
+  constructor(
+    public readonly gameId: GameId,
+    public readonly userId: number,
+    private readonly resourceLimits: ResourceLimits
+  ) {
+    this.id = `${gameId.toString()}-${userId}-${Date.now()}`;
+    this.startTime = new Date();
+    this.url = `/sandbox/${this.id}`;
+  }
+  
+  getUrl(): string {
+    return this.url;
+  }
+  
+  getId(): string {
+    return this.id;
+  }
+  
+  getState(): SandboxState {
+    return this.state;
+  }
+  
+  setRunning(): void {
+    this.state = SandboxState.RUNNING;
+  }
+  
+  setError(error: string): void {
+    this.state = SandboxState.ERROR;
+    this.errorMessage = error;
+  }
+  
+  stop(): void {
+    this.state = SandboxState.STOPPED;
+  }
+  
+  isExpired(): boolean {
+    const now = new Date();
+    const elapsedMs = now.getTime() - this.startTime.getTime();
+    return elapsedMs > this.resourceLimits.timeout * 1000;
+  }
+}
+
+/**
+ * Service responsible for creating and managing sandboxed game environments
  */
 export class GameSandboxService {
-  private instances: Map<string, SandboxInstance>;
-  private readonly defaultLifetime = 1000 * 60 * 60; // 1 hour in milliseconds
-  private readonly cleanupInterval = 1000 * 60 * 15; // 15 minutes
-  private readonly maxInstances = 100;
-
-  constructor() {
-    this.instances = new Map();
-    
-    // Set up periodic cleanup
-    setInterval(() => this.cleanupStaleInstances(), this.cleanupInterval);
+  private sandboxes: Map<string, SandboxInstance> = new Map();
+  
+  constructor(
+    private readonly securityLevel: string = 'high',
+    private readonly defaultResourceLimits: ResourceLimits = {
+      memory: '128M',
+      cpu: 0.5,
+      timeout: 3600  // 1 hour in seconds
+    }
+  ) {
+    // Start the cleanup task for expired sandboxes
+    this.startCleanupTask();
   }
-
+  
   /**
-   * Creates a new sandbox instance for a game
-   * @param gameId The ID of the game to create a sandbox for
-   * @returns The ID of the created sandbox
+   * Creates a new sandboxed environment for a game
+   * 
+   * @param params The parameters for creating the sandbox
+   * @returns The URL of the sandboxed game
    */
-  async createSandbox(gameId: number): Promise<string> {
-    // Enforce instance limit
-    if (this.instances.size >= this.maxInstances) {
-      this.cleanupStaleInstances();
-      if (this.instances.size >= this.maxInstances) {
-        throw new Error('Maximum number of sandbox instances reached');
+  async createSandbox(params: SandboxParams): Promise<string> {
+    const { gameId, userId, gameFiles, entryPoint, resourceLimits } = params;
+    
+    try {
+      // Create a new sandbox instance
+      const instance = new SandboxInstance(
+        gameId,
+        userId, 
+        resourceLimits
+      );
+      
+      // Store game files and configure the sandbox
+      await this.setupSandboxFiles(instance.getId(), gameFiles, entryPoint);
+      
+      // Add to active sandboxes
+      this.sandboxes.set(instance.getId(), instance);
+      
+      // Set the instance as running
+      instance.setRunning();
+      
+      // Return the URL to access the sandboxed game
+      return instance.getUrl();
+    } catch (error) {
+      console.error(`Failed to create sandbox: ${error}`);
+      throw new Error(`Failed to create sandbox: ${error.message}`);
+    }
+  }
+  
+  /**
+   * Cleans up expired sandbox instances
+   */
+  private async cleanupExpiredSandboxes(): Promise<void> {
+    for (const [id, instance] of this.sandboxes) {
+      if (instance.isExpired()) {
+        await this.stopSandbox(id);
       }
     }
-
-    // Create new sandbox instance
-    const sandboxId = uuidv4();
-    
-    const newInstance: SandboxInstance = {
-      id: sandboxId,
-      gameId,
-      created: new Date(),
-      accessed: new Date(),
-      resourceUsage: {
-        cpuTime: 0,
-        memoryUsage: 0,
-        networkRequests: 0
-      }
-    };
-    
-    this.instances.set(sandboxId, newInstance);
-    
-    return sandboxId;
   }
-
+  
   /**
-   * Gets the sandbox instance by its ID
-   * @param sandboxId The ID of the sandbox
-   * @returns The sandbox instance or undefined if not found
+   * Stops a sandbox instance
+   * 
+   * @param sandboxId The ID of the sandbox to stop
+   */
+  async stopSandbox(sandboxId: string): Promise<void> {
+    const instance = this.sandboxes.get(sandboxId);
+    if (instance) {
+      instance.stop();
+      this.sandboxes.delete(sandboxId);
+      
+      // Clean up any associated resources
+      await this.cleanupSandboxFiles(sandboxId);
+    }
+  }
+  
+  /**
+   * Sets up the necessary files for a sandbox
+   */
+  private async setupSandboxFiles(
+    sandboxId: string, 
+    files: Record<string, string>,
+    entryPoint: string
+  ): Promise<void> {
+    // This would be implemented with actual file system operations
+    // For now it's just a simulation
+    console.log(`Setting up sandbox ${sandboxId} with entry point ${entryPoint}`);
+    return Promise.resolve();
+  }
+  
+  /**
+   * Cleans up files for a terminated sandbox
+   */
+  private async cleanupSandboxFiles(sandboxId: string): Promise<void> {
+    // This would be implemented with actual file system operations
+    console.log(`Cleaning up sandbox ${sandboxId}`);
+    return Promise.resolve();
+  }
+  
+  /**
+   * Starts the periodic cleanup task
+   */
+  private startCleanupTask(): void {
+    setInterval(() => {
+      this.cleanupExpiredSandboxes().catch(err => {
+        console.error(`Error during sandbox cleanup: ${err}`);
+      });
+    }, 60000); // Check every minute
+  }
+  
+  /**
+   * Gets a sandbox instance by ID
    */
   getSandbox(sandboxId: string): SandboxInstance | undefined {
-    const instance = this.instances.get(sandboxId);
-    
-    if (instance) {
-      // Update access time
-      instance.accessed = new Date();
-      this.instances.set(sandboxId, instance);
-    }
-    
-    return instance;
+    return this.sandboxes.get(sandboxId);
   }
-
-  /**
-   * Gets the game ID associated with a sandbox
-   * @param sandboxId The ID of the sandbox
-   * @returns The game ID or undefined if sandbox not found
-   */
-  getGameId(sandboxId: string): number | undefined {
-    const instance = this.getSandbox(sandboxId);
-    return instance?.gameId;
-  }
-
-  /**
-   * Cleans up sandbox instances that haven't been accessed in a while
-   */
-  private cleanupStaleInstances(): void {
-    const now = new Date();
-    const entriesToRemove: string[] = [];
-    
-    // Find stale instances
-    for (const [id, instance] of this.instances.entries()) {
-      const timeSinceAccess = now.getTime() - instance.accessed.getTime();
-      if (timeSinceAccess > this.defaultLifetime) {
-        entriesToRemove.push(id);
-      }
-    }
-    
-    // Remove stale instances
-    for (const id of entriesToRemove) {
-      this.instances.delete(id);
-    }
-    
-    console.log(`Cleaned up ${entriesToRemove.length} stale sandbox instances`);
-  }
-
-  /**
-   * Updates resource usage for a sandbox instance
-   * @param sandboxId The ID of the sandbox
-   * @param usage The updated resource usage
-   */
-  updateResourceUsage(sandboxId: string, usage: Partial<ResourceUsage>): void {
-    const instance = this.instances.get(sandboxId);
-    
-    if (instance) {
-      instance.resourceUsage = {
-        ...instance.resourceUsage,
-        ...usage
-      };
-      this.instances.set(sandboxId, instance);
-    }
-  }
-
+  
   /**
    * Gets all active sandbox instances
-   * @returns Array of all active sandboxes
    */
-  getAllInstances(): SandboxInstance[] {
-    return Array.from(this.instances.values());
-  }
-
-  /**
-   * Gets the number of active sandbox instances
-   * @returns The count of active instances
-   */
-  getInstanceCount(): number {
-    return this.instances.size;
-  }
-
-  /**
-   * Destroys a sandbox instance
-   * @param sandboxId The ID of the sandbox to destroy
-   * @returns true if the sandbox was destroyed, false if it wasn't found
-   */
-  destroySandbox(sandboxId: string): boolean {
-    return this.instances.delete(sandboxId);
+  getAllSandboxes(): SandboxInstance[] {
+    return Array.from(this.sandboxes.values());
   }
 }

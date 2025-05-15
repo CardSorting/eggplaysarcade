@@ -276,18 +276,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.post("/games/:id/play", async (req: Request, res: Response) => {
     try {
       const gameId = parseInt(req.params.id);
-      const userId = req.user?.id; // If using authentication
+      const userId = req.user?.id || 0; // Default to 0 if not authenticated
       
       // Create a command and use the command handler
       const command: LaunchGameCommand = { gameId, userId };
-      const result = await launchGameHandler.handle(command);
       
-      // Return the sandbox information
-      res.json({
-        ...result,
-        gameId,
-        launchSessionId: `session-${Date.now()}`
-      });
+      try {
+        const result = await launchGameHandler.handle(command);
+        
+        // Return the sandbox information
+        res.json({
+          sandboxUrl: result,
+          gameId,
+          launchSessionId: `session-${Date.now()}`
+        });
+      } catch (handlerError) {
+        console.error("Error in LaunchGameCommandHandler:", handlerError);
+        res.status(500).json({ message: "Failed to launch game", error: handlerError.message });
+      }
     } catch (error) {
       console.error("Error launching game:", error);
       res.status(500).json({ message: "Failed to launch game" });
@@ -472,7 +478,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up game sandbox service and proxy
   const sandboxService = new GameSandboxService();
   const sandboxProxy = new GameSandboxProxy(sandboxService);
-  const launchGameHandler = new LaunchGameCommandHandler(sandboxService);
+  // Create a temporary repository implementation for the LaunchGameCommandHandler
+  const gameRepository = {
+    getById: async (id: any) => {
+      const game = await storage.getGameById(typeof id === 'object' ? id.toString() : id);
+      if (!game) return null;
+      
+      // Add placeholder files for demo (would be real files in production)
+      return {
+        ...game,
+        files: {
+          'index.html': '<h1>Game Content</h1><p>This is the game content</p>',
+          'style.css': 'body { font-family: sans-serif; }',
+          'script.js': 'console.log("Game loaded");'
+        },
+        entryPoint: 'index.html',
+        resourceLimits: {
+          memory: '128M',
+          cpu: 0.5,
+          timeout: 3600
+        }
+      };
+    },
+    incrementPlayerCount: async (id: any, increment: number) => {
+      return storage.updateGamePlayers(typeof id === 'object' ? id.toString() : id, increment);
+    }
+  };
+  
+  const launchGameHandler = new LaunchGameCommandHandler(sandboxService, gameRepository);
   
   // Add sandbox middleware
   app.use("/sandbox", sandboxProxy.createSandboxMiddleware());

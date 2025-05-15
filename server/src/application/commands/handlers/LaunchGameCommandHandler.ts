@@ -1,63 +1,60 @@
+import { GameId } from '../../../domain/value-objects/GameId';
 import { GameSandboxService } from '../../../infrastructure/services/GameSandboxService';
-import { storage } from '../../../../storage';
+import { CommandHandler } from '../CommandHandler';
+import { LaunchGameCommand } from '../LaunchGameCommand';
 
 /**
- * Command to launch a game in the sandbox
+ * CQRS Command Handler for launching games in secure sandboxed environments
  */
-export interface LaunchGameCommand {
-  gameId: number;
-  userId?: number; // Optional: if the user is logged in
-}
+export class LaunchGameCommandHandler implements CommandHandler<LaunchGameCommand, string> {
+  constructor(
+    private readonly sandboxService: GameSandboxService,
+    private readonly gameRepository: any // Replace with proper IGameRepository once implemented
+  ) {}
 
-/**
- * Response data from launching a game
- */
-export interface LaunchGameResponse {
-  sandboxId: string;
-  sandboxUrl: string;
-}
-
-/**
- * Handler for the LaunchGameCommand
- * Following the Command pattern from CQRS
- */
-export class LaunchGameCommandHandler {
-  private readonly sandboxService: GameSandboxService;
-  
-  constructor(sandboxService: GameSandboxService) {
-    this.sandboxService = sandboxService;
-  }
-  
   /**
-   * Handles the command to launch a game in sandbox
-   * @param command The LaunchGameCommand
-   * @returns A promise with the LaunchGameResponse
+   * Handles the LaunchGameCommand by spinning up a sandboxed environment
+   * for the game and returning the URL to access it
+   * 
+   * @param command The LaunchGameCommand containing game and user info
+   * @returns Promise with the URL to the sandboxed game
    */
-  async handle(command: LaunchGameCommand): Promise<LaunchGameResponse> {
+  async handle(command: LaunchGameCommand): Promise<string> {
     const { gameId, userId } = command;
     
-    // Validation: Game exists
-    const game = await storage.getGameById(gameId);
-    if (!game) {
-      throw new Error('Game not found');
+    // Convert the raw gameId to a domain GameId value object
+    const gameIdObj = GameId.fromNumber(typeof gameId === 'string' ? parseInt(gameId) : gameId);
+    
+    try {
+      // 1. Fetch the game from the repository
+      const game = await this.gameRepository.getById(gameIdObj);
+      if (!game) {
+        throw new Error(`Game with ID ${gameId} not found`);
+      }
+      
+      // 2. Update game player count
+      await this.gameRepository.incrementPlayerCount(gameIdObj, 1);
+      
+      // 3. Create a sandbox for the game
+      const sandboxUrl = await this.sandboxService.createSandbox({
+        gameId: gameIdObj,
+        userId,
+        gameFiles: game.files,
+        entryPoint: game.entryPoint || 'index.html',
+        resourceLimits: {
+          memory: game.resourceLimits?.memory || '128M',
+          cpu: game.resourceLimits?.cpu || 0.5,
+          timeout: game.resourceLimits?.timeout || 3600 // 1 hour in seconds
+        }
+      });
+      
+      // 4. Log the play event for analytics
+      // logPlayEvent({ gameId, userId, timestamp: new Date() });
+      
+      return sandboxUrl;
+    } catch (error) {
+      console.error(`Error launching game: ${error}`);
+      throw new Error(`Failed to launch game: ${error.message}`);
     }
-    
-    // Create sandbox for the game
-    const sandboxId = await this.sandboxService.createSandbox(gameId);
-    
-    // Generate the sandbox URL
-    const sandboxUrl = `/sandbox/${sandboxId}`;
-    
-    // Track game launch event (if user is logged in)
-    if (userId) {
-      // We could track analytics here, like:
-      // await analyticsService.trackEvent('game_launch', { gameId, userId });
-      console.log(`User ${userId} launched game ${gameId}`);
-    }
-    
-    return {
-      sandboxId,
-      sandboxUrl
-    };
   }
 }
