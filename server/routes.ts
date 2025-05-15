@@ -69,6 +69,8 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Create the handlers for game file operations
+  const getGameFileUrlHandler = new GetGameFileUrlHandler();
   // Set up authentication
   setupAuth(app);
   
@@ -157,6 +159,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(userWithoutPassword);
   });
   
+  // API endpoint for accessing files from B2 with presigned URLs
+  apiRouter.get("/files/:type/:path", async (req: Request, res: Response) => {
+    try {
+      const { type, path } = req.params;
+      const filePath = `${type}/${path}`;
+      
+      // Generate a pre-signed URL with the handler
+      const url = await getGameFileUrlHandler.handle(filePath);
+      
+      // Return the URL
+      res.json({ url });
+    } catch (error) {
+      console.error('Error generating file URL:', error);
+      res.status(500).json({ message: 'Failed to generate file URL' });
+    }
+  });
+
   // === Public routes ===
   // Get all categories
   apiRouter.get("/categories", async (req: Request, res: Response) => {
@@ -348,20 +367,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(401).json({ message: "Authentication required" });
         }
         
-        // Set the file paths for storage
+        // Use GameSubmissionService to handle the upload to B2
+        const gameSubmissionService = new GameSubmissionService();
+        
+        // Prepare the game data
         const gameData = {
           ...req.body,
-          userId,
           categoryId: parseInt(req.body.categoryId),
-          thumbnailUrl: `/uploads/thumbnails/${thumbnail.filename}`,
-          gameUrl: `/uploads/games/${gameFile.filename}`,
         };
         
-        // Validate the data
-        const validatedData = insertGameSchema.parse(gameData);
-        
-        // Create the game
-        const game = await storage.createGame(validatedData);
+        // Submit the game (uploads files to B2 and creates game record)
+        const game = await gameSubmissionService.submitGame(
+          gameData, 
+          gameFile, 
+          thumbnail, 
+          userId
+        );
         res.status(201).json(game);
       } catch (error) {
         if (error instanceof ZodError) {
