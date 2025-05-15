@@ -1,64 +1,31 @@
 /**
  * Permission value object
- * Following the Value Object pattern from Domain-Driven Design
+ * Represents a single permission in the system
+ * Following DDD principles for encapsulating domain logic
  */
 export class Permission {
-  constructor(public readonly value: string) {
-    if (!Permission.isValid(value)) {
-      throw new Error(`Invalid permission: ${value}`);
+  constructor(private readonly _value: string) {
+    this.validate();
+  }
+  
+  get value(): string {
+    return this._value;
+  }
+  
+  private validate(): void {
+    if (!this._value || typeof this._value !== 'string' || this._value.trim() === '') {
+      throw new Error('Permission value must be a non-empty string');
     }
-  }
-
-  /**
-   * List of all valid permissions in the system
-   */
-  public static readonly ALL_PERMISSIONS = [
-    // Admin permissions
-    'manage_users',
-    'manage_games',
-    'manage_categories',
-    'moderate_content',
-    'view_analytics',
-    'configure_system',
     
-    // Game Developer permissions
-    'manage_own_games',
-    'view_own_analytics',
-    'edit_own_profile',
-    'submit_games',
-    
-    // Player permissions
-    'play_games',
-    'rate_games',
-    'manage_playlists'
-  ] as const;
-  
-  /**
-   * Type of all valid permissions
-   */
-  public static readonly PERMISSION_TYPE = Permission.ALL_PERMISSIONS[0];
-  
-  /**
-   * Check if a permission value is valid
-   */
-  public static isValid(value: string): boolean {
-    return (Permission.ALL_PERMISSIONS as readonly string[]).includes(value);
+    // Additional validation logic can be added here
+    // Such as checking against a predefined list of valid permissions
   }
   
-  /**
-   * Convert permission to string
-   */
-  public toString(): string {
-    return this.value;
+  equals(permission: Permission): boolean {
+    return this._value === permission.value;
   }
   
-  /**
-   * Compare two permissions
-   */
-  public equals(other: Permission): boolean {
-    if (!(other instanceof Permission)) {
-      return false;
-    }
-    return this.value === other.value;
+  toString(): string {
+    return this._value;
   }
 }

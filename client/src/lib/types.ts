@@ -20,6 +20,43 @@ export interface User {
 }
 
 /**
+ * Game interface matching the backend Game entity
+ */
+export interface Game {
+  id: number;
+  title: string;
+  description: string;
+  instructions: string;
+  thumbnailUrl: string;
+  gameUrl: string;
+  categoryId: number;
+  userId: number;
+  tags?: string[] | null;
+  publishedAt: Date;
+  rating: number | null;
+  players: number | null;
+}
+
+/**
+ * Category interface matching the backend Category entity
+ */
+export interface Category {
+  id: number;
+  name: string;
+  icon: string;
+}
+
+/**
+ * Rating interface matching the backend Rating entity
+ */
+export interface Rating {
+  id: number;
+  userId: number;
+  gameId: number;
+  value: number;
+}
+
+/**
  * Permissions available in the system
  */
 export type Permission = 
@@ -50,6 +87,11 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'configure_system',
     'play_games',
     'rate_games',
+    'manage_playlists',
+    'submit_games',
+    'manage_own_games',
+    'view_own_analytics',
+    'edit_own_profile'
   ],
   [UserRole.GAME_DEVELOPER]: [
     'manage_own_games',
@@ -58,11 +100,12 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'submit_games',
     'play_games',
     'rate_games',
+    'manage_playlists'
   ],
   [UserRole.PLAYER]: [
     'play_games',
     'rate_games',
     'edit_own_profile',
-    'manage_playlists',
+    'manage_playlists'
   ],
 };

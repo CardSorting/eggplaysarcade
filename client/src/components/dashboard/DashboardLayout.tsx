@@ -1,19 +1,22 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
-  Gamepad2, 
   Users, 
   Settings, 
-  Tags, 
-  LogOut,
-  User
+  FileBarChart, 
+  GamepadIcon, 
+  LogOut, 
+  ListTodo, 
+  StarIcon,
+  BookMarked,
+  User,
+  Trophy
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface NavItemProps {
@@ -25,18 +28,19 @@ interface NavItemProps {
 
 const NavItem = ({ label, icon, href, active }: NavItemProps) => {
   return (
-    <Link href={href}>
-      <Button
-        variant={active ? "secondary" : "ghost"}
-        className={cn(
-          "w-full justify-start gap-2",
-          active ? "bg-secondary" : "hover:bg-secondary/50"
-        )}
-      >
-        {icon}
+    <Button
+      variant={active ? "secondary" : "ghost"}
+      className={cn(
+        "w-full justify-start",
+        active && "bg-muted font-medium"
+      )}
+      asChild
+    >
+      <Link href={href}>
+        <span className="mr-2">{icon}</span>
         {label}
-      </Button>
-    </Link>
+      </Link>
+    </Button>
   );
 };
 
@@ -46,98 +50,189 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) => {
-  const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
+  const [location] = useLocation();
+  
+  // Define navigation items based on user role
+  const getNavItems = () => {
+    const commonItems = [
+      {
+        label: "Dashboard",
+        icon: <LayoutDashboard className="h-5 w-5" />,
+        href: "/dashboard",
+      }
+    ];
+    
+    if (!user) return commonItems;
+    
+    // Admin-specific navigation items
+    if (user.role === UserRole.ADMIN) {
+      return [
+        ...commonItems,
+        {
+          label: "Users",
+          icon: <Users className="h-5 w-5" />,
+          href: "/dashboard/users",
+        },
+        {
+          label: "Games",
+          icon: <GamepadIcon className="h-5 w-5" />,
+          href: "/dashboard/games",
+        },
+        {
+          label: "Categories",
+          icon: <ListTodo className="h-5 w-5" />,
+          href: "/dashboard/categories",
+        },
+        {
+          label: "Analytics",
+          icon: <FileBarChart className="h-5 w-5" />,
+          href: "/dashboard/analytics",
+        },
+        {
+          label: "Settings",
+          icon: <Settings className="h-5 w-5" />,
+          href: "/dashboard/settings",
+        }
+      ];
+    }
+    
+    // Game Developer navigation
+    if (user.role === UserRole.GAME_DEVELOPER) {
+      return [
+        ...commonItems,
+        {
+          label: "My Games",
+          icon: <GamepadIcon className="h-5 w-5" />,
+          href: "/dashboard/mygames",
+        },
+        {
+          label: "Submit Game",
+          icon: <FileBarChart className="h-5 w-5" />,
+          href: "/dashboard/submit",
+        },
+        {
+          label: "Analytics",
+          icon: <FileBarChart className="h-5 w-5" />,
+          href: "/dashboard/analytics",
+        },
+        {
+          label: "Profile",
+          icon: <User className="h-5 w-5" />,
+          href: "/dashboard/profile",
+        }
+      ];
+    }
+    
+    // Player navigation
+    return [
+      ...commonItems,
+      {
+        label: "Favorites",
+        icon: <StarIcon className="h-5 w-5" />,
+        href: "/dashboard/favorites",
+      },
+      {
+        label: "Achievements",
+        icon: <Trophy className="h-5 w-5" />,
+        href: "/dashboard/achievements",
+      },
+      {
+        label: "Library",
+        icon: <BookMarked className="h-5 w-5" />,
+        href: "/dashboard/library",
+      },
+      {
+        label: "Profile",
+        icon: <User className="h-5 w-5" />,
+        href: "/dashboard/profile",
+      }
+    ];
+  };
+  
+  const navItems = getNavItems();
   
   const handleLogout = () => {
     logoutMutation.mutate();
   };
-  
-  // Navigation items based on user role
-  let navItems = [];
-  
-  if (user?.role === UserRole.ADMIN) {
-    navItems = [
-      { label: "Overview", icon: <LayoutDashboard size={16} />, href: "/dashboard", active: activeTab === "overview" },
-      { label: "Users", icon: <Users size={16} />, href: "/dashboard/users", active: activeTab === "users" },
-      { label: "Games", icon: <Gamepad2 size={16} />, href: "/dashboard/games", active: activeTab === "games" },
-      { label: "Categories", icon: <Tags size={16} />, href: "/dashboard/categories", active: activeTab === "categories" },
-      { label: "Settings", icon: <Settings size={16} />, href: "/dashboard/settings", active: activeTab === "settings" }
-    ];
-  } else if (user?.role === UserRole.GAME_DEVELOPER) {
-    navItems = [
-      { label: "My Games", icon: <Gamepad2 size={16} />, href: "/dashboard", active: activeTab === "my games" },
-      { label: "Analytics", icon: <LayoutDashboard size={16} />, href: "/dashboard/analytics", active: activeTab === "analytics" },
-      { label: "Profile", icon: <User size={16} />, href: "/dashboard/profile", active: activeTab === "profile" }
-    ];
-  } else {
-    // Player role
-    navItems = [
-      { label: "My Games", icon: <Gamepad2 size={16} />, href: "/dashboard", active: activeTab === "my games" },
-      { label: "Profile", icon: <User size={16} />, href: "/dashboard/profile", active: activeTab === "profile" }
-    ];
-  }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
-      <div className="hidden md:flex flex-col w-64 border-r bg-card">
-        <div className="p-6">
-          <Link href="/">
-            <h2 className="text-2xl font-bold tracking-tight">Game Platform</h2>
-          </Link>
-          <p className="text-sm text-muted-foreground mt-1">Dashboard</p>
-        </div>
-        
-        <div className="flex-1 px-4 space-y-2 py-4">
-          {navItems.map((item, i) => (
-            <NavItem
-              key={i}
-              label={item.label}
-              icon={item.icon}
-              href={item.href}
-              active={item.active}
-            />
-          ))}
-        </div>
-        
-        <div className="p-4 mt-auto border-t">
-          <div className="flex items-center gap-3 mb-4">
-            <Avatar>
-              <AvatarImage src={user?.avatarUrl || undefined} />
-              <AvatarFallback>
-                {user?.username?.charAt(0).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-medium">{user?.username}</p>
-              <p className="text-xs text-muted-foreground capitalize">
-                {user?.role?.replace('_', ' ')}
-              </p>
-            </div>
+      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-80 bg-card border-r">
+        <div className="flex-1 flex flex-col min-h-0 pt-5">
+          <div className="flex items-center px-4 mb-4">
+            <Link href="/" className="flex items-center">
+              <GamepadIcon className="h-6 w-6 text-primary mr-2" />
+              <span className="text-xl font-semibold">Game Portal</span>
+            </Link>
           </div>
           
-          <Button variant="outline" className="w-full justify-start gap-2" onClick={handleLogout}>
-            <LogOut size={16} />
-            Log Out
-          </Button>
+          {/* User info */}
+          {user && (
+            <div className="px-4 mb-6 flex items-center">
+              <Avatar className="h-9 w-9 mr-3">
+                <AvatarImage src={user.avatarUrl || ""} alt={user.username} />
+                <AvatarFallback>
+                  {user.username?.substring(0, 2).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-medium text-sm truncate max-w-[160px]">
+                  {user.username}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {user.role}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Navigation */}
+          <nav className="flex-1 px-3 space-y-1">
+            {navItems.map((item) => (
+              <NavItem
+                key={item.href}
+                label={item.label}
+                icon={item.icon}
+                href={item.href}
+                active={
+                  activeTab === item.label.toLowerCase() ||
+                  location === item.href
+                }
+              />
+            ))}
+          </nav>
+          
+          {/* Logout button */}
+          <div className="p-4 border-t">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Mobile header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b py-2 px-4">
+        <div className="flex justify-between items-center">
+          <Link href="/" className="flex items-center">
+            <GamepadIcon className="h-6 w-6 text-primary mr-2" />
+            <span className="text-xl font-semibold">Game Portal</span>
+          </Link>
+          
+          {/* Mobile user dropdown would go here */}
         </div>
       </div>
       
       {/* Main content */}
-      <div className="flex-1">
-        {/* Mobile header */}
-        <header className="md:hidden border-b p-4">
-          <div className="flex items-center justify-between">
-            <Link href="/">
-              <h2 className="text-xl font-bold">Game Platform</h2>
-            </Link>
-            {/* Mobile menu button would go here */}
-          </div>
-        </header>
-        
-        {/* Content */}
-        <main className="p-6 max-w-6xl mx-auto">
+      <div className="md:pl-64 flex flex-col flex-1">
+        <main className="flex-1 pt-16 md:pt-0">
           {children}
         </main>
       </div>

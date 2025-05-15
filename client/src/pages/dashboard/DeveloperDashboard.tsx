@@ -1,161 +1,214 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  GameController, 
-  Plus,
-  BarChart3,
-  Users,
-  Star,
-  Pencil,
-  Trash2
-} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { UserRole } from "@/lib/types";
-import { getQueryFn } from "@/lib/queryClient";
-import { Redirect, Link } from "wouter";
-import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Game } from "@/lib/types";
+import { 
+  Loader2, 
+  Plus, 
+  BarChart3, 
+  GamepadIcon, 
+  Star, 
+  Eye, 
+  Pencil,
+  Trash
+} from "lucide-react";
+import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 export default function DeveloperDashboard() {
   const { user } = useAuth();
   
-  // Redirect if not a developer
-  if (user && user.role !== UserRole.GAME_DEVELOPER) {
-    return <Redirect to="/dashboard" />;
-  }
+  // Mock data for developer's games - would be replaced with a real query
+  const myGames = [
+    {
+      id: 1,
+      title: "Space Adventure",
+      description: "An exciting space exploration game",
+      players: 1205,
+      rating: 4.5,
+      publishedAt: new Date("2023-12-15"),
+      thumbnailUrl: "/images/game1.jpg"
+    },
+    {
+      id: 2,
+      title: "Puzzle Master",
+      description: "Challenge your brain with these mind-bending puzzles",
+      players: 3250,
+      rating: 4.2,
+      publishedAt: new Date("2024-02-10"),
+      thumbnailUrl: "/images/game2.jpg"
+    },
+    {
+      id: 3,
+      title: "Racing Legends",
+      description: "Race against the best drivers in high-speed competitions",
+      players: 2750,
+      rating: 4.7,
+      publishedAt: new Date("2024-04-05"),
+      thumbnailUrl: "/images/game3.jpg"
+    }
+  ];
   
-  // Developer's games query
-  const { data: myGames, isLoading } = useQuery<Game[]>({
-    queryKey: ["/api/games/developer"],
-    queryFn: getQueryFn({ on401: "throw" }),
-  });
-
   return (
-    <DashboardLayout activeTab="my games">
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-3xl font-bold tracking-tight">My Games</h2>
-          <Button asChild>
-            <Link href="/dashboard/submit">
-              <Plus className="mr-2 h-4 w-4" /> Submit New Game
-            </Link>
-          </Button>
+    <DashboardLayout activeTab="dashboard">
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Developer Dashboard</h2>
+          <div className="flex items-center space-x-2">
+            <Button asChild>
+              <Link href="/dashboard/submit">
+                <Plus className="mr-2 h-4 w-4" />
+                Submit New Game
+              </Link>
+            </Button>
+          </div>
         </div>
         
-        <p className="text-muted-foreground">
-          Manage your submitted HTML5 games and track their performance.
-        </p>
-        
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <>
-            {(!myGames || myGames.length === 0) ? (
-              <Card className="bg-muted/40">
-                <CardHeader>
-                  <CardTitle>No games yet</CardTitle>
-                  <CardDescription>
-                    You haven't submitted any games yet. Start by creating your first game!
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button asChild>
-                    <Link href="/dashboard/submit">
-                      <GameController className="mr-2 h-4 w-4" /> Submit Your First Game
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {myGames.map((game) => (
-                  <Card key={game.id} className="overflow-hidden">
-                    <img 
-                      src={game.thumbnailUrl} 
-                      alt={game.title}
-                      className="w-full h-40 object-cover"
-                    />
-                    <CardHeader className="p-4">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{game.title}</CardTitle>
-                        <Badge variant="outline" className="ml-2">
-                          {game.categoryId === 1 ? 'Action' : 
-                           game.categoryId === 2 ? 'Puzzle' : 
-                           game.categoryId === 3 ? 'Strategy' : 
-                           game.categoryId === 4 ? 'Casual' : 'Other'}
-                        </Badge>
-                      </div>
-                      <CardDescription className="line-clamp-2 mt-1">
-                        {game.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="flex space-x-4 text-sm text-muted-foreground">
-                        <div className="flex items-center">
-                          <Users className="mr-1 h-4 w-4" />
-                          <span>{game.players || 0}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Star className="mr-1 h-4 w-4" />
-                          <span>{game.rating ? (game.rating / 10).toFixed(1) : 'No ratings'}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <BarChart3 className="mr-1 h-4 w-4" />
-                          <span>Stats</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-between">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/play/${game.id}`}>
-                          <GameController className="mr-2 h-4 w-4" /> Play
-                        </Link>
-                      </Button>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/dashboard/edit/${game.id}`}>
-                            <Pencil className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-500">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            )}
-            <div className="grid gap-4 mt-8">
+        <Tabs defaultValue="mygames" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="mygames">My Games</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="mygames" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
-                <CardHeader>
-                  <CardTitle>Performance Overview</CardTitle>
-                  <CardDescription>
-                    How your games are performing
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Games
+                  </CardTitle>
+                  <GamepadIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center p-8 text-muted-foreground">
-                    <BarChart3 className="mx-auto h-12 w-12 mb-4" />
-                    <p>Analytics data will be available once your games receive more traffic</p>
+                  <div className="text-2xl font-bold">{myGames.length}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Players
+                  </CardTitle>
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {myGames.reduce((sum, game) => sum + (game.players || 0), 0).toLocaleString()}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Average Rating
+                  </CardTitle>
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {(myGames.reduce((sum, game) => sum + (game.rating || 0), 0) / myGames.length).toFixed(1)}
                   </div>
                 </CardContent>
               </Card>
             </div>
-          </>
-        )}
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>My Published Games</CardTitle>
+                <CardDescription>
+                  Manage and monitor all your games in one place
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {myGames.map(game => (
+                    <div key={game.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1 space-y-1 mb-4 md:mb-0">
+                        <div className="flex items-center">
+                          <h3 className="font-medium text-lg">{game.title}</h3>
+                          <Badge variant="outline" className="ml-2">
+                            {game.rating} ★
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{game.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Published: {game.publishedAt.toLocaleDateString()} • {game.players.toLocaleString()} players
+                        </p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/games/${game.id}`}>
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Link>
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Pencil className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-destructive">
+                          <Trash className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="analytics" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Game Performance</CardTitle>
+                <CardDescription>
+                  View detailed analytics for all your games
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px] flex items-center justify-center">
+                <div className="text-center">
+                  <BarChart3 className="h-16 w-16 mx-auto text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground mt-4">Detailed analytics will be implemented here</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="profile" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Developer Profile</CardTitle>
+                <CardDescription>
+                  Manage your developer profile and settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Account Information</h3>
+                    <p><strong>Username:</strong> {user?.username}</p>
+                    <p><strong>Email:</strong> {user?.email || "No email provided"}</p>
+                    <p><strong>Role:</strong> {user?.role}</p>
+                    <p><strong>Bio:</strong> {user?.bio || "No bio provided"}</p>
+                  </div>
+                  
+                  <div className="flex pt-4">
+                    <Button>
+                      Edit Profile
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

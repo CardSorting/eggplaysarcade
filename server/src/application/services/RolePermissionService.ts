@@ -26,7 +26,6 @@ export class RolePermissionService {
       'view_own_analytics',
       'edit_own_profile'
     ],
-    
     [UserRole.GAME_DEVELOPER]: [
       'manage_own_games',
       'view_own_analytics',
@@ -36,12 +35,11 @@ export class RolePermissionService {
       'rate_games',
       'manage_playlists'
     ],
-    
     [UserRole.PLAYER]: [
       'play_games',
       'rate_games',
-      'manage_playlists',
-      'edit_own_profile'
+      'edit_own_profile',
+      'manage_playlists'
     ]
   };
   
@@ -49,23 +47,31 @@ export class RolePermissionService {
    * Get all permissions for a given role
    */
   public getPermissionsForRole(role: UserRole): Permission[] {
-    const permissionStrings = RolePermissionService.rolePermissionsMap[role] || [];
-    return permissionStrings.map(p => new Permission(p));
+    return (RolePermissionService.rolePermissionsMap[role] || [])
+      .map(permission => new Permission(permission));
   }
   
   /**
    * Check if a role has a specific permission
    */
   public roleHasPermission(role: UserRole, permission: string): boolean {
-    const permissionStrings = RolePermissionService.rolePermissionsMap[role] || [];
-    return permissionStrings.includes(permission);
+    const permissions = RolePermissionService.rolePermissionsMap[role] || [];
+    return permissions.includes(permission);
   }
   
   /**
    * Get all the permissions that exist in the system
    */
   public getAllPermissions(): Permission[] {
-    return Permission.ALL_PERMISSIONS.map(p => new Permission(p));
+    const allPermissionStrings = new Set<string>();
+    
+    // Collect all unique permissions from all roles
+    Object.values(RolePermissionService.rolePermissionsMap).forEach(permissions => {
+      permissions.forEach(permission => allPermissionStrings.add(permission));
+    });
+    
+    // Convert to Permission value objects
+    return Array.from(allPermissionStrings).map(permission => new Permission(permission));
   }
   
   /**
@@ -79,6 +85,7 @@ export class RolePermissionService {
    * Check if a permission is valid
    */
   public isValidPermission(permission: string): boolean {
-    return Permission.isValid(permission);
+    const allPermissions = this.getAllPermissions().map(p => p.value);
+    return allPermissions.includes(permission);
   }
 }

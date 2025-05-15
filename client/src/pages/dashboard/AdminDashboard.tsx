@@ -1,150 +1,161 @@
-import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Users, 
-  GameController, 
-  BarChart3, 
-  Tag 
-} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { UserRole } from "@/lib/types";
-import { getQueryFn } from "@/lib/queryClient";
-import { Redirect } from "wouter";
-import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Users, Plus, BarChart3, ListTodo, GamepadIcon } from "lucide-react";
+import { Link } from "wouter";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   
-  // Redirect if not an admin
-  if (user && user.role !== UserRole.ADMIN) {
-    return <Redirect to="/dashboard" />;
-  }
-  
-  // Stats queries
-  const { data: userStats, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ["/api/stats/users"],
-    queryFn: getQueryFn({ on401: "throw" }),
-  });
-  
-  const { data: gameStats, isLoading: isLoadingGames } = useQuery({
-    queryKey: ["/api/stats/games"],
-    queryFn: getQueryFn({ on401: "throw" }),
-  });
-  
-  const { data: categoryStats, isLoading: isLoadingCategories } = useQuery({
-    queryKey: ["/api/stats/categories"],
-    queryFn: getQueryFn({ on401: "throw" }),
-  });
-  
-  const isLoading = isLoadingUsers || isLoadingGames || isLoadingCategories;
-  
-  const stats = [
-    {
-      title: "Total Users",
-      value: userStats?.total || 0,
-      description: "Active users on the platform",
-      icon: <Users className="h-5 w-5 text-muted-foreground" />,
-      change: userStats?.percentChange || 0
-    },
-    {
-      title: "Games Published",
-      value: gameStats?.total || 0,
-      description: "Games hosted on the platform",
-      icon: <GameController className="h-5 w-5 text-muted-foreground" />,
-      change: gameStats?.percentChange || 0
-    },
-    {
-      title: "Categories",
-      value: categoryStats?.total || 0,
-      description: "Game categories available",
-      icon: <Tag className="h-5 w-5 text-muted-foreground" />,
-      change: 0
-    },
-    {
-      title: "Total Plays",
-      value: gameStats?.totalPlays || 0,
-      description: "Games played this month",
-      icon: <BarChart3 className="h-5 w-5 text-muted-foreground" />,
-      change: gameStats?.playsPercentChange || 0
-    }
-  ];
-
   return (
-    <DashboardLayout activeTab="overview">
-      <div className="space-y-4">
-        <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
-        <p className="text-muted-foreground">
-          Welcome back, {user?.username}. Here's an overview of platform activity.
-        </p>
-        
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <DashboardLayout activeTab="dashboard">
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
+          <div className="flex items-center space-x-2">
+            <Button asChild>
+              <Link href="/dashboard/submit">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Game
+              </Link>
+            </Button>
           </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat, i) => (
-              <Card key={i}>
+        </div>
+        
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    {stat.title}
+                    Total Users
                   </CardTitle>
-                  {stat.icon}
+                  <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-2xl font-bold">152</div>
                   <p className="text-xs text-muted-foreground">
-                    {stat.description}
+                    +12.3% from last month
                   </p>
-                  {stat.change !== 0 && (
-                    <p className={`text-xs mt-1 ${stat.change > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {stat.change > 0 ? '+' : ''}{stat.change}% from last month
-                    </p>
-                  )}
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-        
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mt-8">
-          <Card className="col-span-1 md:col-span-2">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Latest activities across the platform
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Activity content here */}
-              <p className="text-sm text-muted-foreground">
-                No recent activities to display
-              </p>
-            </CardContent>
-          </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Games Published
+                  </CardTitle>
+                  <Games className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">45</div>
+                  <p className="text-xs text-muted-foreground">
+                    +7.1% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Active Categories
+                  </CardTitle>
+                  <Category className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">8</div>
+                </CardContent>
+              </Card>
+              
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="col-span-4">
+                <CardHeader>
+                  <CardTitle>Total Game Plays</CardTitle>
+                </CardHeader>
+                <CardContent className="pl-2">
+                  <div className="text-2xl font-bold mb-2">12,453</div>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    +24.5% from last month
+                  </p>
+                  <div className="h-[200px] flex items-center justify-center">
+                    <BarChart3 className="h-16 w-16 text-muted-foreground/30" />
+                    <p className="text-sm text-muted-foreground">Interactive chart will appear here</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle>Top Categories</CardTitle>
+                  <CardDescription>
+                    Most popular game categories this month
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <div className="w-[30%] font-medium">Action</div>
+                      <div className="w-[55%] bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div className="bg-primary h-2.5 rounded-full" style={{ width: '75%' }}></div>
+                      </div>
+                      <div className="w-[15%] text-right text-sm">75%</div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-[30%] font-medium">Puzzle</div>
+                      <div className="w-[55%] bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div className="bg-primary h-2.5 rounded-full" style={{ width: '62%' }}></div>
+                      </div>
+                      <div className="w-[15%] text-right text-sm">62%</div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-[30%] font-medium">Adventure</div>
+                      <div className="w-[55%] bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div className="bg-primary h-2.5 rounded-full" style={{ width: '53%' }}></div>
+                      </div>
+                      <div className="w-[15%] text-right text-sm">53%</div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-[30%] font-medium">Strategy</div>
+                      <div className="w-[55%] bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div className="bg-primary h-2.5 rounded-full" style={{ width: '45%' }}></div>
+                      </div>
+                      <div className="w-[15%] text-right text-sm">45%</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Popular Categories</CardTitle>
-              <CardDescription>
-                Most active game categories
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Category stats here */}
-              <p className="text-sm text-muted-foreground">
-                No category data available
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="analytics" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Analytics</CardTitle>
+                <CardDescription>
+                  Detailed analytics will appear here.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px] flex items-center justify-center">
+                <div className="text-center">
+                  <BarChart3 className="h-16 w-16 mx-auto text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground mt-4">Analytics dashboard will be implemented here</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

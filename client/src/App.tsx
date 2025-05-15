@@ -4,12 +4,16 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import UnauthorizedPage from "@/pages/unauthorized";
 import Home from "@/pages/Home";
 import Games from "@/pages/Games";
 import GameDetails from "@/pages/GameDetails";
 import SubmitGame from "@/pages/SubmitGame";
+import Dashboard from "@/pages/dashboard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
   return (
@@ -20,7 +24,20 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/games" component={Games} />
           <Route path="/games/:id" component={GameDetails} />
-          <Route path="/submit" component={SubmitGame} />
+          
+          {/* Protected routes */}
+          <ProtectedRoute 
+            path="/dashboard" 
+            component={Dashboard} 
+          />
+          <ProtectedRoute 
+            path="/dashboard/submit" 
+            component={SubmitGame} 
+            requiredPermission="submit_games" 
+          />
+          
+          {/* Auth and error pages */}
+          <Route path="/unauthorized" component={UnauthorizedPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -33,8 +50,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <AuthProvider>
+          <Toaster />
+          <Router />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
