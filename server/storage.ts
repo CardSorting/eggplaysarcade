@@ -3,7 +3,9 @@ import {
   categories, type Category, type InsertCategory,
   games, type Game, type InsertGame,
   ratings, type Rating, type InsertRating,
-  wishlists, type Wishlist, type InsertWishlist
+  wishlists, type Wishlist, type InsertWishlist,
+  gameSubmissions, type GameSubmission, type InsertGameSubmission, 
+  type ReviewNote, SubmissionStatus
 } from "@shared/schema";
 
 export interface IStorage {
@@ -25,6 +27,7 @@ export interface IStorage {
   getFeaturedGames(limit: number): Promise<Game[]>;
   getPopularGames(limit: number): Promise<Game[]>;
   createGame(game: InsertGame): Promise<Game>;
+  updateGame(id: number, gameData: Partial<InsertGame>): Promise<Game | undefined>;
   updateGamePlayers(id: number, increment: number): Promise<Game | undefined>;
   searchGames(query: string): Promise<Game[]>;
   
@@ -37,6 +40,22 @@ export interface IStorage {
   removeFromWishlist(userId: number, gameId: number): Promise<boolean>;
   getWishlistItems(userId: number): Promise<Game[]>;
   isGameInWishlist(userId: number, gameId: number): Promise<boolean>;
+  
+  // Game Submission methods
+  getGameSubmissions(): Promise<GameSubmission[]>;
+  getGameSubmissionById(id: number): Promise<GameSubmission | undefined>;
+  createGameSubmission(submission: InsertGameSubmission): Promise<GameSubmission>;
+  updateGameSubmission(id: number, data: Partial<InsertGameSubmission>): Promise<GameSubmission | undefined>;
+  updateGameSubmissionStatus(id: number, data: {
+    status?: string;
+    reviewerId?: number;
+    rejectionReason?: string;
+    reviewedAt?: Date;
+    publishedAt?: Date;
+  }): Promise<GameSubmission | undefined>;
+  addGameSubmissionReviewNote(id: number, note: ReviewNote): Promise<GameSubmission | undefined>;
+  getGameSubmissionsByDeveloper(developerId: number): Promise<GameSubmission[]>;
+  getGameSubmissionsByStatus(status: string): Promise<GameSubmission[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -45,10 +64,12 @@ export class MemStorage implements IStorage {
   private games: Map<number, Game>;
   private ratings: Map<number, Rating>;
   private wishlistItems: Map<string, Wishlist>;
+  private gameSubmissions: Map<number, GameSubmission>;
   private userCurrentId: number;
   private categoryCurrentId: number;
   private gameCurrentId: number;
   private ratingCurrentId: number;
+  private gameSubmissionCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -56,10 +77,12 @@ export class MemStorage implements IStorage {
     this.games = new Map();
     this.ratings = new Map();
     this.wishlistItems = new Map();
+    this.gameSubmissions = new Map();
     this.userCurrentId = 1;
     this.categoryCurrentId = 1;
     this.gameCurrentId = 1;
     this.ratingCurrentId = 1;
+    this.gameSubmissionCurrentId = 1;
     
     // Initialize with default categories
     const defaultCategories = [
@@ -164,10 +187,30 @@ export class MemStorage implements IStorage {
       id, 
       publishedAt: new Date(), 
       rating: 0, 
-      players: 0 
+      players: 0,
+      tags: insertGame.tags || null
     };
     this.games.set(id, game);
     return game;
+  }
+  
+  async updateGame(id: number, gameData: Partial<InsertGame>): Promise<Game | undefined> {
+    const game = this.games.get(id);
+    if (!game) return undefined;
+    
+    const updatedGame: Game = {
+      ...game,
+      ...gameData,
+      tags: gameData.tags || game.tags,
+      // Preserve these fields
+      id: game.id,
+      publishedAt: game.publishedAt,
+      rating: game.rating,
+      players: game.players
+    };
+    
+    this.games.set(id, updatedGame);
+    return updatedGame;
   }
   
   async updateGamePlayers(id: number, increment: number): Promise<Game | undefined> {
@@ -176,7 +219,7 @@ export class MemStorage implements IStorage {
     
     const updatedGame = { 
       ...game, 
-      players: game.players + increment 
+      players: (game.players || 0) + increment 
     };
     this.games.set(id, updatedGame);
     return updatedGame;
@@ -264,6 +307,127 @@ export class MemStorage implements IStorage {
   async isGameInWishlist(userId: number, gameId: number): Promise<boolean> {
     const key = `${userId}-${gameId}`;
     return this.wishlistItems.has(key);
+  }
+  
+  // Game Submission methods
+  async getGameSubmissions(): Promise<GameSubmission[]> {
+    return Array.from(this.gameSubmissions.values());
+  }
+  
+  async getGameSubmissionById(id: number): Promise<GameSubmission | undefined> {
+    return this.gameSubmissions.get(id);
+  }
+  
+  async createGameSubmission(submission: InsertGameSubmission): Promise<GameSubmission> {
+    const id = this.gameSubmissionCurrentId++;
+    const gameSubmission: GameSubmission = {
+      ...submission,
+      id,
+      submittedAt: new Date(),
+      reviewedAt: null,
+      publishedAt: null,
+      status: submission.status || SubmissionStatus.DRAFT,
+      reviewNotes: submission.reviewNotes || [],
+      metadata: submission.metadata || {
+        title: "",
+        description: "",
+        shortDescription: "",
+        instructions: "",
+        features: [],
+        categories: [],
+        tags: [],
+        technicalDetails: {
+          hasExternalAPIs: false,
+          hasServerSideCode: false,
+          thirdPartyLibraries: []
+        },
+        assets: {
+          iconImageUrl: "",
+          headerImageUrl: "",
+          screenshotUrls: []
+        }
+      }
+    };
+    
+    this.gameSubmissions.set(id, gameSubmission);
+    return gameSubmission;
+  }
+  
+  async updateGameSubmission(
+    id: number, 
+    data: Partial<InsertGameSubmission>
+  ): Promise<GameSubmission | undefined> {
+    const submission = this.gameSubmissions.get(id);
+    if (!submission) return undefined;
+    
+    // Create updated submission
+    const updatedSubmission: GameSubmission = {
+      ...submission,
+      ...data,
+      // Ensure metadata is properly merged
+      metadata: data.metadata 
+        ? { ...submission.metadata, ...data.metadata }
+        : submission.metadata,
+      // Ensure review notes are properly handled
+      reviewNotes: data.reviewNotes || submission.reviewNotes
+    };
+    
+    this.gameSubmissions.set(id, updatedSubmission);
+    return updatedSubmission;
+  }
+  
+  async updateGameSubmissionStatus(
+    id: number, 
+    data: {
+      status?: string;
+      reviewerId?: number;
+      rejectionReason?: string;
+      reviewedAt?: Date;
+      publishedAt?: Date;
+    }
+  ): Promise<GameSubmission | undefined> {
+    const submission = this.gameSubmissions.get(id);
+    if (!submission) return undefined;
+    
+    // Create updated submission
+    const updatedSubmission: GameSubmission = {
+      ...submission,
+      status: data.status || submission.status,
+      reviewerId: data.reviewerId || submission.reviewerId,
+      rejectionReason: data.rejectionReason || submission.rejectionReason,
+      reviewedAt: data.reviewedAt || submission.reviewedAt,
+      publishedAt: data.publishedAt || submission.publishedAt
+    };
+    
+    this.gameSubmissions.set(id, updatedSubmission);
+    return updatedSubmission;
+  }
+  
+  async addGameSubmissionReviewNote(
+    id: number, 
+    note: ReviewNote
+  ): Promise<GameSubmission | undefined> {
+    const submission = this.gameSubmissions.get(id);
+    if (!submission) return undefined;
+    
+    // Create updated submission with new review note
+    const updatedSubmission: GameSubmission = {
+      ...submission,
+      reviewNotes: [...submission.reviewNotes, note]
+    };
+    
+    this.gameSubmissions.set(id, updatedSubmission);
+    return updatedSubmission;
+  }
+  
+  async getGameSubmissionsByDeveloper(developerId: number): Promise<GameSubmission[]> {
+    return Array.from(this.gameSubmissions.values())
+      .filter(submission => submission.developerId === developerId);
+  }
+  
+  async getGameSubmissionsByStatus(status: string): Promise<GameSubmission[]> {
+    return Array.from(this.gameSubmissions.values())
+      .filter(submission => submission.status === status);
   }
 }
 
