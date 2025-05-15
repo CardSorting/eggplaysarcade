@@ -2,14 +2,25 @@ import { pgTable, text, serial, integer, boolean, timestamp, primaryKey } from "
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// User roles as an enum for type safety
+export enum UserRole {
+  ADMIN = 'admin',
+  GAME_DEVELOPER = 'game_developer',
+  PLAYER = 'player'
+}
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").default("player").notNull(),
+  role: text("role", { enum: ['admin', 'game_developer', 'player'] }).default("player").notNull(),
   email: text("email"),
   avatarUrl: text("avatar_url"),
   bio: text("bio"),
+  displayName: text("display_name"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastLogin: timestamp("last_login"),
+  isVerified: boolean("is_verified").default(false),
 });
 
 export const categories = pgTable("categories", {
@@ -59,6 +70,19 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   avatarUrl: true,
   bio: true,
+  displayName: true,
+  isVerified: true,
+});
+
+// Specialized insert schemas for specific user types
+export const insertPlayerSchema = insertUserSchema.extend({
+  role: z.literal(UserRole.PLAYER),
+});
+
+export const insertDeveloperSchema = insertUserSchema.extend({
+  role: z.literal(UserRole.GAME_DEVELOPER),
+  companyName: z.string().optional(),
+  portfolio: z.string().url().optional(),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).pick({
@@ -86,6 +110,8 @@ export const insertWishlistSchema = createInsertSchema(wishlists).pick({
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
+export type InsertDeveloper = z.infer<typeof insertDeveloperSchema>;
 export type User = typeof users.$inferSelect;
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
