@@ -42,23 +42,13 @@ if (!fs.existsSync(thumbnailsDir)) {
   fs.mkdirSync(thumbnailsDir, { recursive: true });
 }
 
-// Configure multer for file uploads
-const storage_config = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const isGameFile = file.fieldname === 'gameFile';
-    const destDir = isGameFile ? gamesDir : thumbnailsDir;
-    cb(null, destDir);
-  },
-  filename: (req, file, cb) => {
-    // Create a unique filename with original extension
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
-  }
-});
+// Import B2 Storage Services
+import { GameSubmissionService } from './src/application/services/GameSubmissionService';
+import { GetGameFileUrlHandler } from './src/application/queries/handlers/GetGameFileUrlHandler';
 
+// Configure multer to store files in memory for B2 upload
 const upload = multer({ 
-  storage: storage_config,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
