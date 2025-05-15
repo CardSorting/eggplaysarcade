@@ -51,7 +51,7 @@ const Games = () => {
   } = useQuery<Game[]>({
     queryKey: [
       "/api/games", 
-      categoryFilter ? `?categoryId=${categoryFilter}` : searchTerm ? `?search=${searchTerm}` : ""
+      categoryFilter && categoryFilter !== "all" ? `?categoryId=${categoryFilter}` : searchTerm ? `?search=${searchTerm}` : ""
     ],
   });
 
@@ -67,7 +67,11 @@ const Games = () => {
   const handleCategoryChange = (value: string) => {
     setCategoryFilter(value);
     setSearchTerm("");
-    setLocation(`/games?categoryId=${value}`);
+    if (value === "all") {
+      setLocation(`/games`);
+    } else {
+      setLocation(`/games?categoryId=${value}`);
+    }
     refetch();
   };
 
@@ -120,7 +124,7 @@ const Games = () => {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-gray-700">
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
