@@ -134,7 +134,7 @@ const Header = () => {
     : [];
 
   // Combine navigation items
-  const navItems = [...mainNavItems, ...developerNavItems];
+  const navItems = [...mainNavItems, ...userNavItems, ...developerNavItems];
 
   return (
     <header className={`sticky top-0 z-50 w-full transition-all duration-200 ${
