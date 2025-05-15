@@ -1,170 +1,147 @@
 import { EntityId } from "../value-objects/EntityId";
-import { DEFAULT_ROLE, RolePermissions, UserRole } from "../enums/UserRole";
+import { UserRole } from "../enums/UserRole";
+import { Permission } from "../valueObjects/Permission";
+import { RolePermissionService } from "../../application/services/RolePermissionService";
 
 /**
- * User entity representing a user in the domain
- * Following the Domain-Driven Design principles
+ * User entity class
+ * Following the Entity pattern from Domain-Driven Design
  */
 export class User {
-  private _id: EntityId | null;
+  // Default role for new users
+  private static readonly DEFAULT_ROLE = UserRole.PLAYER;
+  
+  // Entity identity
+  public readonly id: EntityId | null;
+  
+  // Entity properties
   private _username: string;
   private _passwordHash: string;
   private _role: UserRole;
   private _email: string | null;
   private _avatarUrl: string | null;
   private _bio: string | null;
+  
+  // Service for permission checking
+  private readonly rolePermissionService: RolePermissionService;
 
+  /**
+   * Private constructor - use static factory methods to create instances
+   */
   private constructor(
-    id: EntityId | null,
+    id: number | null,
     username: string,
     passwordHash: string,
-    role: UserRole = DEFAULT_ROLE,
+    role: UserRole = User.DEFAULT_ROLE,
     email: string | null = null,
     avatarUrl: string | null = null,
     bio: string | null = null
   ) {
-    this._id = id;
+    this.id = id !== null ? new EntityId(id) : null;
     this._username = username;
     this._passwordHash = passwordHash;
     this._role = role;
     this._email = email;
     this._avatarUrl = avatarUrl;
     this._bio = bio;
+    this.rolePermissionService = new RolePermissionService();
   }
 
   /**
-   * Create a new user
+   * Factory method to create a new User entity
    */
   public static create(
     username: string,
     passwordHash: string,
-    role: UserRole = DEFAULT_ROLE,
-    email: string | null = null
+    role: UserRole = User.DEFAULT_ROLE,
+    email: string | null = null,
+    avatarUrl: string | null = null,
+    bio: string | null = null
   ): User {
-    if (!username || !passwordHash) {
-      throw new Error("Username and password are required");
-    }
-    
-    return new User(
-      null,
-      username,
-      passwordHash,
-      role,
-      email
-    );
+    return new User(null, username, passwordHash, role, email, avatarUrl, bio);
   }
 
   /**
-   * Reconstruct a user from persistence
+   * Factory method to reconstitute a User entity from persistence
    */
   public static reconstitute(
     id: number,
     username: string,
     passwordHash: string,
-    role: UserRole = DEFAULT_ROLE,
+    role: UserRole = User.DEFAULT_ROLE,
     email: string | null = null,
     avatarUrl: string | null = null,
     bio: string | null = null
   ): User {
-    return new User(
-      new EntityId(id),
-      username,
-      passwordHash,
-      role,
-      email,
-      avatarUrl,
-      bio
-    );
+    return new User(id, username, passwordHash, role, email, avatarUrl, bio);
   }
 
-  /**
-   * Get the ID of this user
-   */
-  public get id(): EntityId | null {
-    return this._id;
-  }
-
-  /**
-   * Get the username of this user
-   */
-  public get username(): string {
+  // Getters and setters
+  get username(): string {
     return this._username;
   }
 
-  /**
-   * Get the password hash of this user
-   */
-  public get passwordHash(): string {
+  set username(value: string) {
+    if (!value || value.trim().length < 3) {
+      throw new Error("Username must be at least 3 characters long");
+    }
+    this._username = value;
+  }
+
+  get passwordHash(): string {
     return this._passwordHash;
   }
 
-  /**
-   * Get the role of this user
-   */
-  public get role(): UserRole {
+  set passwordHash(value: string) {
+    if (!value) {
+      throw new Error("Password hash cannot be empty");
+    }
+    this._passwordHash = value;
+  }
+
+  get role(): UserRole {
     return this._role;
   }
 
-  /**
-   * Get the email of this user
-   */
-  public get email(): string | null {
+  set role(value: UserRole) {
+    this._role = value;
+  }
+
+  get email(): string | null {
     return this._email;
   }
 
-  /**
-   * Get the avatar URL of this user
-   */
-  public get avatarUrl(): string | null {
+  set email(value: string | null) {
+    this._email = value;
+  }
+
+  get avatarUrl(): string | null {
     return this._avatarUrl;
   }
 
-  /**
-   * Get the bio of this user
-   */
-  public get bio(): string | null {
+  set avatarUrl(value: string | null) {
+    this._avatarUrl = value;
+  }
+
+  get bio(): string | null {
     return this._bio;
+  }
+
+  set bio(value: string | null) {
+    this._bio = value;
   }
 
   /**
    * Check if user has a specific permission
    */
-  public hasPermission(permission: string): boolean {
-    return RolePermissions[this._role]?.includes(permission) || false;
+  public hasPermission(permission: Permission): boolean {
+    return this.rolePermissionService.hasPermission(this._role, permission);
   }
 
   /**
-   * Update user's password
+   * Get all permissions for this user
    */
-  public updatePassword(passwordHash: string): void {
-    this._passwordHash = passwordHash;
-  }
-
-  /**
-   * Update user's role
-   */
-  public updateRole(role: UserRole): void {
-    this._role = role;
-  }
-
-  /**
-   * Update user's email
-   */
-  public updateEmail(email: string | null): void {
-    this._email = email;
-  }
-
-  /**
-   * Update user's avatar URL
-   */
-  public updateAvatarUrl(avatarUrl: string | null): void {
-    this._avatarUrl = avatarUrl;
-  }
-
-  /**
-   * Update user's bio
-   */
-  public updateBio(bio: string | null): void {
-    this._bio = bio;
+  public getPermissions(): Permission[] {
+    return this.rolePermissionService.getPermissionsForRole(this._role);
   }
 }
