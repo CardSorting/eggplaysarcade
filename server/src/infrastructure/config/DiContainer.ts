@@ -40,11 +40,11 @@ export class DiContainer {
   private readonly updateGamePlayersCommand: UpdateGamePlayersCommand;
   
   // Queries
-  private readonly getGamesQuery: GetGamesQuery;
-  private readonly getGameByIdQuery: GetGameByIdQuery;
-  private readonly getFeaturedGamesQuery: GetFeaturedGamesQuery;
-  private readonly getPopularGamesQuery: GetPopularGamesQuery;
-  private readonly getCategoriesQuery: GetCategoriesQuery;
+  private readonly gamesQuery: GetGamesQuery;
+  private readonly gameByIdQuery: GetGameByIdQuery;
+  private readonly featuredGamesQuery: GetFeaturedGamesQuery;
+  private readonly popularGamesQuery: GetPopularGamesQuery;
+  private readonly categoriesQuery: GetCategoriesQuery;
   
   private constructor() {
     // Initialize repositories
@@ -74,29 +74,29 @@ export class DiContainer {
     );
     
     // Initialize queries
-    this.getGamesQuery = new GetGamesQuery(
+    this.gamesQuery = new GetGamesQuery(
       this.gameRepository,
       this.categoryRepository
     );
     
-    this.getGameByIdQuery = new GetGameByIdQuery(
+    this.gameByIdQuery = new GetGameByIdQuery(
       this.gameRepository,
       this.categoryRepository,
       this.userRepository,
       this.ratingRepository
     );
     
-    this.getFeaturedGamesQuery = new GetFeaturedGamesQuery(
+    this.featuredGamesQuery = new GetFeaturedGamesQuery(
       this.gameRepository,
       this.categoryRepository
     );
     
-    this.getPopularGamesQuery = new GetPopularGamesQuery(
+    this.popularGamesQuery = new GetPopularGamesQuery(
       this.gameRepository,
       this.categoryRepository
     );
     
-    this.getCategoriesQuery = new GetCategoriesQuery(
+    this.categoriesQuery = new GetCategoriesQuery(
       this.categoryRepository,
       this.gameRepository
     );
@@ -145,22 +145,22 @@ export class DiContainer {
   
   // Query getters
   getGamesQuery(): GetGamesQuery {
-    return this.getGamesQuery;
+    return this.gamesQuery;
   }
   
   getGameByIdQuery(): GetGameByIdQuery {
-    return this.getGameByIdQuery;
+    return this.gameByIdQuery;
   }
   
   getFeaturedGamesQuery(): GetFeaturedGamesQuery {
-    return this.getFeaturedGamesQuery;
+    return this.featuredGamesQuery;
   }
   
   getPopularGamesQuery(): GetPopularGamesQuery {
-    return this.getPopularGamesQuery;
+    return this.popularGamesQuery;
   }
   
   getCategoriesQuery(): GetCategoriesQuery {
-    return this.getCategoriesQuery;
+    return this.categoriesQuery;
   }
 }
