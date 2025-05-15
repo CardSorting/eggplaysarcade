@@ -15,9 +15,13 @@ import { setupAuth } from "./auth";
 import { requireAuth, requireRole, requirePermission } from "./middleware/authMiddleware";
 import { logAuthStatus } from "./middleware/debugMiddleware";
 import { UserRole } from "@/lib/types";
-// These services don't exist yet, commented out to fix the application
-// import { GameSandboxProxy } from "./src/infrastructure/services/GameSandboxProxy";
-// import { GameSandboxService } from "./src/infrastructure/services/GameSandboxService";
+// Import sandbox services
+import { GameSandboxProxy } from "./src/infrastructure/services/GameSandboxProxy";
+import { GameSandboxService } from "./src/infrastructure/services/GameSandboxService";
+import { 
+  LaunchGameCommandHandler,
+  LaunchGameCommand
+} from "./src/application/commands/handlers/LaunchGameCommandHandler";
 import passport from "passport";
 
 // Create uploads directory if it doesn't exist
@@ -477,10 +481,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use("/uploads", express.static(uploadsDir));
   
-  // Set up game sandbox proxy (commented out until services are implemented)
-  // const sandboxService = new GameSandboxService();
-  // const sandboxProxy = new GameSandboxProxy(sandboxService);
-  // app.use("/sandbox", sandboxProxy.createSandboxMiddleware());
+  // Set up game sandbox service and proxy
+  const sandboxService = new GameSandboxService();
+  const sandboxProxy = new GameSandboxProxy(sandboxService);
+  const launchGameHandler = new LaunchGameCommandHandler(sandboxService);
+  
+  // Add sandbox middleware
+  app.use("/sandbox", sandboxProxy.createSandboxMiddleware());
   
   // Create HTTP server
   const httpServer = createServer(app);
