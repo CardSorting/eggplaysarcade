@@ -1,48 +1,55 @@
-import { scrypt, randomBytes } from 'crypto';
-import { promisify } from 'util';
-import { RegisterDeveloperCommand } from '../RegisterDeveloperCommand';
-import { IUserRepository } from '../../../domain/repositories/IUserRepository';
-import { DeveloperEntity } from '../../../domain/entities/DeveloperEntity';
+import { RegisterDeveloperCommand } from "../RegisterDeveloperCommand";
+import { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import { DeveloperEntity } from "../../../domain/entities/DeveloperEntity";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 
+// Password hashing utility (same as in auth.ts)
 const scryptAsync = promisify(scrypt);
 
 /**
- * Command Handler for game developer registration
- * Following CQRS pattern - This handler processes the intent to register a developer
+ * Handler for RegisterDeveloperCommand
+ * Following CQRS pattern, this handler is responsible for registering a game developer
  */
 export class RegisterDeveloperHandler {
   constructor(private readonly userRepository: IUserRepository) {}
-  
-  async execute(command: RegisterDeveloperCommand): Promise<DeveloperEntity> {
+
+  async handle(command: RegisterDeveloperCommand): Promise<DeveloperEntity> {
     // Check if username already exists
-    const existingUser = await this.userRepository.findByUsername(command.username);
-    if (existingUser) {
-      throw new Error('Username already exists');
+    const usernameExists = await this.userRepository.usernameExists(command.username);
+    if (usernameExists) {
+      throw new Error("Username already exists");
     }
-    
+
     // Hash password
-    const passwordHash = await this.hashPassword(command.password);
-    
+    const hashedPassword = await this.hashPassword(command.password);
+
     // Create developer entity
-    const developer = DeveloperEntity.create(
+    const developerEntity = new DeveloperEntity(
       command.username,
-      passwordHash,
-      command.email,
-      command.companyName,
-      command.portfolio,
-      command.displayName
+      hashedPassword,
+      {
+        email: command.email,
+        displayName: command.displayName,
+        companyName: command.companyName,
+        portfolio: command.portfolio,
+        avatarUrl: command.avatarUrl,
+        bio: command.bio
+      }
     );
+
+    // Save to repository
+    const savedDeveloper = await this.userRepository.saveDeveloper(developerEntity);
     
-    // Save developer to database
-    return await this.userRepository.createDeveloper(developer);
+    return savedDeveloper;
   }
-  
+
   /**
-   * Hash password using scrypt
+   * Hash password with salt
    */
   private async hashPassword(password: string): Promise<string> {
-    const salt = randomBytes(16).toString('hex');
+    const salt = randomBytes(16).toString("hex");
     const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-    return `${buf.toString('hex')}.${salt}`;
+    return `${buf.toString("hex")}.${salt}`;
   }
 }

@@ -21,6 +21,9 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastLogin: timestamp("last_login"),
   isVerified: boolean("is_verified").default(false),
+  // Developer specific fields
+  companyName: text("company_name"),
+  portfolio: text("portfolio_url"),
 });
 
 export const categories = pgTable("categories", {

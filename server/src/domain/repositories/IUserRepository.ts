@@ -1,50 +1,25 @@
-import { UserEntity } from '../entities/UserEntity';
-import { PlayerEntity } from '../entities/PlayerEntity';
-import { DeveloperEntity } from '../entities/DeveloperEntity';
+import { UserEntity } from "../entities/UserEntity";
+import { PlayerEntity } from "../entities/PlayerEntity";
+import { DeveloperEntity } from "../entities/DeveloperEntity";
 
 /**
  * User Repository Interface
- * Following the Repository pattern from DDD, this defines
- * the contract for user data access
+ * Following Clean Architecture, this defines the contract for user persistence operations
  */
 export interface IUserRepository {
-  /**
-   * Find a user by their ID
-   */
+  // Find methods
   findById(id: number): Promise<UserEntity | null>;
-  
-  /**
-   * Find a user by their username
-   */
   findByUsername(username: string): Promise<UserEntity | null>;
   
-  /**
-   * Find a user by their email
-   */
-  findByEmail(email: string): Promise<UserEntity | null>;
+  // Save methods
+  save(entity: UserEntity): Promise<UserEntity>;
   
-  /**
-   * Save a user (create or update)
-   */
-  save(user: UserEntity): Promise<UserEntity>;
+  // Check methods
+  usernameExists(username: string): Promise<boolean>;
   
-  /**
-   * Find a player by their ID
-   */
-  findPlayerById(id: number): Promise<PlayerEntity | null>;
+  // Player-specific methods
+  savePlayer(entity: PlayerEntity): Promise<PlayerEntity>;
   
-  /**
-   * Find a developer by their ID
-   */
-  findDeveloperById(id: number): Promise<DeveloperEntity | null>;
-  
-  /**
-   * Create a new player
-   */
-  createPlayer(player: PlayerEntity): Promise<PlayerEntity>;
-  
-  /**
-   * Create a new developer
-   */
-  createDeveloper(developer: DeveloperEntity): Promise<DeveloperEntity>;
+  // Developer-specific methods
+  saveDeveloper(entity: DeveloperEntity): Promise<DeveloperEntity>;
 }

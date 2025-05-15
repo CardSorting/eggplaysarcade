@@ -1,15 +1,13 @@
-import { db } from '../../../db';
-import { users } from '../../../../shared/schema';
-import { IUserRepository } from '../../domain/repositories/IUserRepository';
-import { UserEntity } from '../../domain/entities/UserEntity';
-import { PlayerEntity } from '../../domain/entities/PlayerEntity';
-import { DeveloperEntity } from '../../domain/entities/DeveloperEntity';
-import { eq } from 'drizzle-orm';
-import { UserRole } from '../../../../shared/schema';
+import { IUserRepository } from "../../domain/repositories/IUserRepository";
+import { UserEntity } from "../../domain/entities/UserEntity";
+import { PlayerEntity } from "../../domain/entities/PlayerEntity";
+import { DeveloperEntity } from "../../domain/entities/DeveloperEntity";
+import { users, UserRole } from "../../../../shared/schema";
+import { db } from "../../../db";
+import { eq } from "drizzle-orm";
 
 /**
- * Database implementation of the User Repository
- * This class adapts the domain repository interface to the actual database
+ * Implementation of the UserRepository using Drizzle ORM
  */
 export class UserRepository implements IUserRepository {
   /**
@@ -39,172 +37,125 @@ export class UserRepository implements IUserRepository {
   }
   
   /**
-   * Find a user by their email
+   * Check if a username already exists
    */
-  async findByEmail(email: string): Promise<UserEntity | null> {
-    if (!email) return null;
-    
-    const [userData] = await db.select().from(users).where(eq(users.email, email));
-    
-    if (!userData) {
-      return null;
-    }
-    
-    return this.mapToEntity(userData);
+  async usernameExists(username: string): Promise<boolean> {
+    const [userData] = await db.select().from(users).where(eq(users.username, username));
+    return !!userData;
   }
   
   /**
-   * Save a user (create or update)
+   * Save a user entity
    */
-  async save(user: UserEntity): Promise<UserEntity> {
-    const id = user.getId();
+  async save(entity: UserEntity): Promise<UserEntity> {
+    const entityId = entity.getId();
     
-    // Create common user data from entity
-    const userData = {
-      username: user.getUsername(),
-      password: user.getPasswordHash(),
-      role: user.getRole(),
-      email: user.getEmail(),
-      bio: user.getBio(),
-      avatarUrl: user.getAvatarUrl(),
-      displayName: user.getDisplayName(),
-      isVerified: user.isUserVerified(),
-      // lastLogin will be updated by the entity
-      lastLogin: user.getLastLogin()
-    };
-    
-    if (id) {
+    if (entityId) {
       // Update existing user
-      const [updated] = await db
+      const [updatedUser] = await db
         .update(users)
-        .set(userData)
-        .where(eq(users.id, id))
+        .set({
+          username: entity.getUsername(),
+          password: entity.getPasswordHash(),
+          role: entity.getRole(),
+          email: entity.getEmail(),
+          avatarUrl: entity.getAvatarUrl(),
+          bio: entity.getBio(),
+          displayName: entity.getDisplayName(),
+          lastLogin: entity.getLastLogin(),
+          isVerified: entity.isUserVerified()
+        })
+        .where(eq(users.id, entityId))
         .returning();
       
-      return this.mapToEntity(updated);
+      return this.mapToEntity(updatedUser);
     } else {
-      // Insert new user
-      const [created] = await db
+      // Create new user
+      const [newUser] = await db
         .insert(users)
-        .values(userData)
+        .values({
+          username: entity.getUsername(),
+          password: entity.getPasswordHash(),
+          role: entity.getRole(),
+          email: entity.getEmail(),
+          avatarUrl: entity.getAvatarUrl(),
+          bio: entity.getBio(),
+          displayName: entity.getDisplayName(),
+          createdAt: entity.getCreatedAt(),
+          lastLogin: entity.getLastLogin(),
+          isVerified: entity.isUserVerified()
+        })
         .returning();
       
-      return this.mapToEntity(created);
+      return this.mapToEntity(newUser);
     }
   }
   
   /**
-   * Find a player by their ID
+   * Save a player entity
    */
-  async findPlayerById(id: number): Promise<PlayerEntity | null> {
-    const [userData] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .where(eq(users.role, UserRole.PLAYER));
-    
-    if (!userData) {
-      return null;
-    }
-    
-    return this.mapToPlayerEntity(userData);
+  async savePlayer(entity: PlayerEntity): Promise<PlayerEntity> {
+    const savedEntity = await this.save(entity);
+    return savedEntity as PlayerEntity;
   }
   
   /**
-   * Find a developer by their ID
+   * Save a developer entity
    */
-  async findDeveloperById(id: number): Promise<DeveloperEntity | null> {
-    const [userData] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .where(eq(users.role, UserRole.GAME_DEVELOPER));
+  async saveDeveloper(entity: DeveloperEntity): Promise<DeveloperEntity> {
+    // First save the base user data
+    const savedEntity = await this.save(entity);
     
-    if (!userData) {
-      return null;
-    }
+    // TODO: In a more complex system, we might need a developers table
+    // to store developer-specific fields like companyName and portfolio
     
-    return this.mapToDeveloperEntity(userData);
+    return savedEntity as DeveloperEntity;
   }
   
   /**
-   * Create a new player
-   */
-  async createPlayer(player: PlayerEntity): Promise<PlayerEntity> {
-    // Delegate to save method
-    const savedUser = await this.save(player);
-    
-    if (!(savedUser instanceof PlayerEntity)) {
-      throw new Error('Expected PlayerEntity but got different entity type');
-    }
-    
-    return savedUser as PlayerEntity;
-  }
-  
-  /**
-   * Create a new developer
-   */
-  async createDeveloper(developer: DeveloperEntity): Promise<DeveloperEntity> {
-    // Delegate to save method
-    const savedUser = await this.save(developer);
-    
-    if (!(savedUser instanceof DeveloperEntity)) {
-      throw new Error('Expected DeveloperEntity but got different entity type');
-    }
-    
-    return savedUser as DeveloperEntity;
-  }
-  
-  /**
-   * Map database user record to appropriate domain entity
+   * Map database user record to domain entity
    */
   private mapToEntity(userData: any): UserEntity {
-    if (userData.role === UserRole.PLAYER) {
-      return this.mapToPlayerEntity(userData);
-    } else if (userData.role === UserRole.GAME_DEVELOPER) {
-      return this.mapToDeveloperEntity(userData);
-    } else {
-      // Default mapping if role is not recognized
-      // In a more complete implementation, we would have an AdminEntity as well
-      return this.mapToPlayerEntity(userData);
+    switch (userData.role) {
+      case UserRole.PLAYER:
+        return new PlayerEntity(
+          userData.username,
+          userData.password,
+          {
+            id: userData.id,
+            email: userData.email,
+            displayName: userData.displayName,
+            avatarUrl: userData.avatarUrl,
+            bio: userData.bio,
+            createdAt: userData.createdAt,
+            lastLogin: userData.lastLogin,
+            isVerified: userData.isVerified
+          }
+        );
+        
+      case UserRole.GAME_DEVELOPER:
+        return new DeveloperEntity(
+          userData.username,
+          userData.password,
+          {
+            id: userData.id,
+            email: userData.email,
+            displayName: userData.displayName,
+            avatarUrl: userData.avatarUrl,
+            bio: userData.bio,
+            // In a complete implementation, we'd retrieve these from a developers table
+            companyName: userData.displayName,  // Using displayName as fallback
+            portfolio: null,
+            createdAt: userData.createdAt,
+            lastLogin: userData.lastLogin,
+            isVerified: userData.isVerified
+          }
+        );
+        
+      default:
+        // For other roles or if we need a generic user
+        // In a complete system we might add an AdminEntity
+        throw new Error(`User role ${userData.role} not supported`);
     }
-  }
-  
-  /**
-   * Map database user record to PlayerEntity
-   */
-  private mapToPlayerEntity(userData: any): PlayerEntity {
-    return new PlayerEntity(
-      userData.id,
-      userData.username,
-      userData.email,
-      userData.password, // Already hashed password from DB
-      userData.bio,
-      userData.avatarUrl,
-      userData.displayName,
-      userData.createdAt || new Date(),
-      userData.lastLogin,
-      userData.isVerified || false
-    );
-  }
-  
-  /**
-   * Map database user record to DeveloperEntity
-   */
-  private mapToDeveloperEntity(userData: any): DeveloperEntity {
-    return new DeveloperEntity(
-      userData.id,
-      userData.username,
-      userData.email,
-      userData.password, // Already hashed password from DB
-      userData.bio,
-      userData.avatarUrl,
-      userData.displayName,
-      userData.createdAt || new Date(),
-      userData.lastLogin,
-      userData.isVerified || false,
-      userData.companyName,
-      userData.portfolio
-    );
   }
 }

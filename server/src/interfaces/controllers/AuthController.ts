@@ -1,142 +1,133 @@
-import { Request, Response } from 'express';
-import { RegisterPlayerCommand } from '../../application/commands/RegisterPlayerCommand';
-import { RegisterDeveloperCommand } from '../../application/commands/RegisterDeveloperCommand';
-import { RegisterPlayerHandler } from '../../application/commands/handlers/RegisterPlayerHandler';
-import { RegisterDeveloperHandler } from '../../application/commands/handlers/RegisterDeveloperHandler';
-import { ZodError } from 'zod';
-import { fromZodError } from 'zod-validation-error';
-import { insertPlayerSchema, insertDeveloperSchema } from '../../../../shared/schema';
+import { Request, Response } from "express";
+import { RegisterPlayerHandler } from "../../application/commands/handlers/RegisterPlayerHandler";
+import { RegisterDeveloperHandler } from "../../application/commands/handlers/RegisterDeveloperHandler";
+import { RegisterPlayerCommand } from "../../application/commands/RegisterPlayerCommand";
+import { RegisterDeveloperCommand } from "../../application/commands/RegisterDeveloperCommand";
+import { User } from "../../../../shared/schema";
 
 /**
- * Controller for handling authentication-related requests
- * Following Clean Architecture principles, controllers transform HTTP requests into commands
+ * Auth Controller
+ * Following Clean Architecture, this controller handles HTTP requests and responses
+ * related to authentication and transforms them into domain commands
  */
 export class AuthController {
   constructor(
     private readonly registerPlayerHandler: RegisterPlayerHandler,
     private readonly registerDeveloperHandler: RegisterDeveloperHandler
   ) {}
-  
+
   /**
    * Register a new player
    */
-  async registerPlayer(req: Request, res: Response) {
+  async registerPlayer(req: Request, res: Response): Promise<void> {
     try {
-      // Validate request data
-      const validatedData = insertPlayerSchema.parse(req.body);
-      
-      // Create command
+      // Validate request
+      if (!req.body.username || !req.body.password) {
+        res.status(400).json({ message: "Username and password are required" });
+        return;
+      }
+
+      // Create command from request
       const command = new RegisterPlayerCommand(
-        validatedData.username,
-        validatedData.password,
-        validatedData.email || null,
-        validatedData.displayName || null
+        req.body.username,
+        req.body.password,
+        req.body.email || null,
+        req.body.displayName || null,
+        req.body.avatarUrl || null,
+        req.body.bio || null
       );
-      
-      // Execute command
-      const player = await this.registerPlayerHandler.execute(command);
-      
-      // Login the user after registration
-      req.login(this.convertEntityToSession(player), (err) => {
+
+      // Handle command
+      const playerEntity = await this.registerPlayerHandler.handle(command);
+
+      // Login the user (set session)
+      const playerData: User = {
+        id: playerEntity.getId() as number,
+        username: playerEntity.getUsername(),
+        role: playerEntity.getRole(),
+        email: playerEntity.getEmail(),
+        avatarUrl: playerEntity.getAvatarUrl(),
+        bio: playerEntity.getBio(),
+        displayName: playerEntity.getDisplayName(),
+        password: playerEntity.getPasswordHash(), // Needed for passport
+        isVerified: playerEntity.isUserVerified(),
+        createdAt: playerEntity.getCreatedAt(),
+        lastLogin: playerEntity.getLastLogin()
+      };
+
+      req.login(playerData, (err) => {
         if (err) {
-          return res.status(500).json({ message: "Failed to log in after registration" });
+          res.status(500).json({ message: "Failed to login after registration" });
+          return;
         }
         
-        // Remove password from response
-        const { password: _, ...playerWithoutPassword } = this.convertEntityToResponse(player);
-        
-        return res.status(201).json(playerWithoutPassword);
+        // Remove sensitive data before sending response
+        const { password, ...playerResponse } = playerData;
+        res.status(201).json(playerResponse);
       });
-    } catch (error) {
-      this.handleError(error, res);
+
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to register player: ${error.message}` });
     }
   }
-  
+
   /**
-   * Register a new game developer
+   * Register a new developer
    */
-  async registerDeveloper(req: Request, res: Response) {
+  async registerDeveloper(req: Request, res: Response): Promise<void> {
     try {
-      // Validate request data
-      const validatedData = insertDeveloperSchema.parse(req.body);
-      
-      // Create command
+      // Validate request
+      if (!req.body.username || !req.body.password) {
+        res.status(400).json({ message: "Username and password are required" });
+        return;
+      }
+
+      // Create command from request
       const command = new RegisterDeveloperCommand(
-        validatedData.username,
-        validatedData.password,
-        validatedData.email || null,
-        validatedData.companyName || null,
-        validatedData.portfolio || null,
-        validatedData.displayName || null
+        req.body.username,
+        req.body.password,
+        req.body.email || null,
+        req.body.displayName || null,
+        req.body.companyName || null,
+        req.body.portfolio || null,
+        req.body.avatarUrl || null,
+        req.body.bio || null
       );
-      
-      // Execute command
-      const developer = await this.registerDeveloperHandler.execute(command);
-      
-      // Login the user after registration
-      req.login(this.convertEntityToSession(developer), (err) => {
+
+      // Handle command
+      const developerEntity = await this.registerDeveloperHandler.handle(command);
+
+      // Login the user (set session)
+      const developerData: User = {
+        id: developerEntity.getId() as number,
+        username: developerEntity.getUsername(),
+        role: developerEntity.getRole(),
+        email: developerEntity.getEmail(),
+        avatarUrl: developerEntity.getAvatarUrl(),
+        bio: developerEntity.getBio(),
+        displayName: developerEntity.getDisplayName(),
+        password: developerEntity.getPasswordHash(), // Needed for passport
+        isVerified: developerEntity.isUserVerified(),
+        createdAt: developerEntity.getCreatedAt(),
+        lastLogin: developerEntity.getLastLogin(),
+        // Additional developer fields
+        companyName: developerEntity.getCompanyName(),
+        portfolio: developerEntity.getPortfolio()
+      };
+
+      req.login(developerData, (err) => {
         if (err) {
-          return res.status(500).json({ message: "Failed to log in after registration" });
+          res.status(500).json({ message: "Failed to login after registration" });
+          return;
         }
         
-        // Remove password from response
-        const { password: _, ...developerWithoutPassword } = this.convertEntityToResponse(developer);
-        
-        return res.status(201).json(developerWithoutPassword);
+        // Remove sensitive data before sending response
+        const { password, ...developerResponse } = developerData;
+        res.status(201).json(developerResponse);
       });
-    } catch (error) {
-      this.handleError(error, res);
+
+    } catch (error: any) {
+      res.status(500).json({ message: `Failed to register developer: ${error.message}` });
     }
-  }
-  
-  /**
-   * Handle errors from registration process
-   */
-  private handleError(error: any, res: Response) {
-    if (error instanceof ZodError) {
-      const validationError = fromZodError(error);
-      return res.status(400).json({ message: validationError.message });
-    }
-    
-    console.error('Registration error:', error);
-    
-    if (error.message === 'Username already exists') {
-      return res.status(400).json({ message: "Username already exists" });
-    }
-    
-    return res.status(500).json({ message: "Failed to register user" });
-  }
-  
-  /**
-   * Convert user entity to session object for passport
-   */
-  private convertEntityToSession(entity: any) {
-    return {
-      id: entity.getId(),
-      username: entity.getUsername(),
-      role: entity.getRole(),
-      email: entity.getEmail(),
-      avatarUrl: entity.getAvatarUrl(),
-      bio: entity.getBio(),
-      displayName: entity.getDisplayName(),
-      password: entity.getPasswordHash(), // Needed for passport but never exposed to client
-      isVerified: entity.isUserVerified()
-    };
-  }
-  
-  /**
-   * Convert user entity to response object
-   */
-  private convertEntityToResponse(entity: any) {
-    const response = this.convertEntityToSession(entity);
-    
-    // Add any specific fields based on user type
-    if (entity.getRole() === 'game_developer') {
-      // Additional developer-specific fields
-      response.companyName = entity.getCompanyName?.();
-      response.portfolio = entity.getPortfolio?.();
-    }
-    
-    return response;
   }
 }

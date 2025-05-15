@@ -1,46 +1,53 @@
-import { scrypt, randomBytes } from 'crypto';
-import { promisify } from 'util';
-import { RegisterPlayerCommand } from '../RegisterPlayerCommand';
-import { IUserRepository } from '../../../domain/repositories/IUserRepository';
-import { PlayerEntity } from '../../../domain/entities/PlayerEntity';
+import { RegisterPlayerCommand } from "../RegisterPlayerCommand";
+import { IUserRepository } from "../../../domain/repositories/IUserRepository";
+import { PlayerEntity } from "../../../domain/entities/PlayerEntity";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 
+// Password hashing utility (same as in auth.ts)
 const scryptAsync = promisify(scrypt);
 
 /**
- * Command Handler for player registration
- * Following CQRS pattern - This handler processes the intent to register a player
+ * Handler for RegisterPlayerCommand
+ * Following CQRS pattern, this handler is responsible for registering a player
  */
 export class RegisterPlayerHandler {
   constructor(private readonly userRepository: IUserRepository) {}
-  
-  async execute(command: RegisterPlayerCommand): Promise<PlayerEntity> {
+
+  async handle(command: RegisterPlayerCommand): Promise<PlayerEntity> {
     // Check if username already exists
-    const existingUser = await this.userRepository.findByUsername(command.username);
-    if (existingUser) {
-      throw new Error('Username already exists');
+    const usernameExists = await this.userRepository.usernameExists(command.username);
+    if (usernameExists) {
+      throw new Error("Username already exists");
     }
-    
+
     // Hash password
-    const passwordHash = await this.hashPassword(command.password);
-    
+    const hashedPassword = await this.hashPassword(command.password);
+
     // Create player entity
-    const player = PlayerEntity.create(
+    const playerEntity = new PlayerEntity(
       command.username,
-      passwordHash,
-      command.email,
-      command.displayName
+      hashedPassword,
+      {
+        email: command.email,
+        displayName: command.displayName,
+        avatarUrl: command.avatarUrl,
+        bio: command.bio
+      }
     );
+
+    // Save to repository
+    const savedPlayer = await this.userRepository.savePlayer(playerEntity);
     
-    // Save player to database
-    return await this.userRepository.createPlayer(player);
+    return savedPlayer;
   }
-  
+
   /**
-   * Hash password using scrypt
+   * Hash password with salt
    */
   private async hashPassword(password: string): Promise<string> {
-    const salt = randomBytes(16).toString('hex');
+    const salt = randomBytes(16).toString("hex");
     const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-    return `${buf.toString('hex')}.${salt}`;
+    return `${buf.toString("hex")}.${salt}`;
   }
 }
