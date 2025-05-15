@@ -24,7 +24,9 @@ import Footer from "@/components/Footer";
 
 const GameDetail = () => {
   const params = useParams<{ id: string }>();
-  const gameId = params.id;
+  const gameId = parseInt(params.id);
+  const { user } = useAuth();
+  const [inWishlist, setInWishlist] = useState(false);
   
   // Fetch game details
   const { data, isLoading, error } = useQuery({
@@ -38,6 +40,20 @@ const GameDetail = () => {
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!gameId
   });
+  
+  // Check wishlist status if user is logged in
+  const { data: wishlistStatus, refetch: refetchWishlistStatus } = useQuery({
+    queryKey: [`/api/wishlist/check/${gameId}`],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!user
+  });
+  
+  // Update wishlist state when status changes
+  useEffect(() => {
+    if (wishlistStatus) {
+      setInWishlist(wishlistStatus.inWishlist);
+    }
+  }, [wishlistStatus]);
   
   // Play game mutation
   const playMutation = useMutation({
@@ -73,6 +89,52 @@ const GameDetail = () => {
     }
   });
   
+  // Add to wishlist mutation
+  const addToWishlistMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/wishlist', { gameId });
+      return await response.json();
+    },
+    onSuccess: () => {
+      setInWishlist(true);
+      queryClient.invalidateQueries({ queryKey: ['/api/wishlist'] });
+      toast({
+        title: "Added to wishlist",
+        description: "Game has been added to your wishlist",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add game to wishlist",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Remove from wishlist mutation
+  const removeFromWishlistMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', `/api/wishlist/${gameId}`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      setInWishlist(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/wishlist'] });
+      toast({
+        title: "Removed from wishlist",
+        description: "Game has been removed from your wishlist",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove game from wishlist",
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Handle play button click
   const handlePlayGame = () => {
     playMutation.mutate();
@@ -81,6 +143,24 @@ const GameDetail = () => {
   // Handle like button click
   const handleLikeGame = () => {
     likeMutation.mutate();
+  };
+  
+  // Handle wishlist toggle
+  const handleWishlistToggle = () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to add games to your wishlist",
+        variant: "default",
+      });
+      return;
+    }
+    
+    if (inWishlist) {
+      removeFromWishlistMutation.mutate();
+    } else {
+      addToWishlistMutation.mutate();
+    }
   };
   
   if (isLoading) {
@@ -180,6 +260,16 @@ const GameDetail = () => {
               >
                 <Heart className="mr-2 h-4 w-4" />
                 Like
+              </Button>
+              
+              <Button 
+                onClick={handleWishlistToggle}
+                variant="outline"
+                disabled={addToWishlistMutation.isPending || removeFromWishlistMutation.isPending}
+                className={inWishlist ? "bg-muted" : ""}
+              >
+                <Heart className={`mr-2 h-4 w-4 ${inWishlist ? "fill-primary text-primary" : ""}`} />
+                {inWishlist ? "Wishlisted" : "Add to Wishlist"}
               </Button>
               
               <Button variant="outline">
