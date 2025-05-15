@@ -176,7 +176,7 @@ export class MemStorage implements IStorage {
   async getPopularGames(limit: number): Promise<Game[]> {
     // For popular games, we'll return ones with most players
     return Array.from(this.games.values())
-      .sort((a, b) => b.players - a.players)
+      .sort((a, b) => (b.players || 0) - (a.players || 0))
       .slice(0, limit);
   }
   
@@ -320,33 +320,23 @@ export class MemStorage implements IStorage {
   
   async createGameSubmission(submission: InsertGameSubmission): Promise<GameSubmission> {
     const id = this.gameSubmissionCurrentId++;
+    
+    // Ensure required fields are present
     const gameSubmission: GameSubmission = {
       ...submission,
       id,
+      gameId: submission.gameId || null,
+      developerId: submission.developerId,
+      versionNumber: submission.versionNumber,
+      bundleId: submission.bundleId || null,
+      rejectionReason: submission.rejectionReason || null,
+      reviewerId: submission.reviewerId || null,
       submittedAt: new Date(),
       reviewedAt: null,
       publishedAt: null,
-      status: submission.status || SubmissionStatus.DRAFT,
+      status: (submission.status || SubmissionStatus.DRAFT) as "draft" | "submitted" | "in_review" | "approved" | "rejected" | "published",
       reviewNotes: submission.reviewNotes || [],
-      metadata: submission.metadata || {
-        title: "",
-        description: "",
-        shortDescription: "",
-        instructions: "",
-        features: [],
-        categories: [],
-        tags: [],
-        technicalDetails: {
-          hasExternalAPIs: false,
-          hasServerSideCode: false,
-          thirdPartyLibraries: []
-        },
-        assets: {
-          iconImageUrl: "",
-          headerImageUrl: "",
-          screenshotUrls: []
-        }
-      }
+      metadata: submission.metadata
     };
     
     this.gameSubmissions.set(id, gameSubmission);
@@ -392,11 +382,11 @@ export class MemStorage implements IStorage {
     // Create updated submission
     const updatedSubmission: GameSubmission = {
       ...submission,
-      status: data.status || submission.status,
-      reviewerId: data.reviewerId || submission.reviewerId,
-      rejectionReason: data.rejectionReason || submission.rejectionReason,
-      reviewedAt: data.reviewedAt || submission.reviewedAt,
-      publishedAt: data.publishedAt || submission.publishedAt
+      status: (data.status || submission.status) as "draft" | "submitted" | "in_review" | "approved" | "rejected" | "published",
+      reviewerId: data.reviewerId !== undefined ? data.reviewerId : submission.reviewerId,
+      rejectionReason: data.rejectionReason !== undefined ? data.rejectionReason : submission.rejectionReason,
+      reviewedAt: data.reviewedAt !== undefined ? data.reviewedAt : submission.reviewedAt,
+      publishedAt: data.publishedAt !== undefined ? data.publishedAt : submission.publishedAt
     };
     
     this.gameSubmissions.set(id, updatedSubmission);

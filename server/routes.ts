@@ -571,10 +571,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add review notes if provided
       if (notes) {
-        const noteObj = {
+        const noteObj: ReviewNote = {
           id: `note-${Date.now()}`,
           content: notes,
-          severity: 'info',
+          severity: 'info' as 'info' | 'warning' | 'critical',
           createdAt: new Date(),
           reviewerId: req.user?.id.toString() || '',
           isResolved: true,
