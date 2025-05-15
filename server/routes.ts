@@ -15,6 +15,8 @@ import { setupAuth } from "./auth";
 import { requireAuth, requireRole, requirePermission } from "./middleware/authMiddleware";
 import { logAuthStatus } from "./middleware/debugMiddleware";
 import { UserRole } from "@/lib/types";
+import { GameSandboxProxy } from "./src/infrastructure/services/GameSandboxProxy";
+import { GameSandboxService } from "./src/infrastructure/services/GameSandboxService";
 import passport from "passport";
 
 // Create uploads directory if it doesn't exist
@@ -224,10 +226,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Game not found" });
       }
       
-      await storage.updateGamePlayers(id, 1);
-      res.json(game);
+      // Don't increment view count here - only when actually viewing the game
+      res.json({ game });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch game" });
+    }
+  });
+  
+  // Get game reviews
+  apiRouter.get("/games/:id/reviews", async (req: Request, res: Response) => {
+    try {
+      const gameId = parseInt(req.params.id);
+      const ratings = await storage.getGameRatings(gameId);
+      
+      // Transform ratings into reviews with user data
+      const reviews = await Promise.all(
+        ratings.map(async (rating) => {
+          const user = await storage.getUser(rating.userId);
+          return {
+            id: rating.id,
+            gameId: rating.gameId,
+            rating: rating.value,
+            content: rating.comment || "",
+            createdAt: rating.createdAt,
+            helpfulCount: 0, // This would come from a separate table in a real app
+            unhelpfulCount: 0,
+            user: {
+              id: user?.id,
+              username: user?.username,
+              avatarUrl: user?.avatarUrl
+            }
+          };
+        })
+      );
+      
+      res.json({ reviews });
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ message: "Failed to fetch game reviews" });
+    }
+  });
+  
+  // Play game in sandbox
+  apiRouter.post("/games/:id/play", async (req: Request, res: Response) => {
+    try {
+      const gameId = parseInt(req.params.id);
+      const userId = req.user?.id; // If using authentication
+      
+      const game = await storage.getGameById(gameId);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      
+      // In a real implementation, you would use the LaunchGameCommandHandler
+      // For this demo, we'll create a simulated sandbox URL
+      const sandboxId = `sandbox-${Date.now()}`;
+      const sandboxUrl = `/sandbox/${gameId}`;
+      
+      // Record the play if not the developer testing their own game
+      if (!userId || userId !== game.userId) {
+        await storage.updateGamePlayers(gameId, 1);
+      }
+      
+      res.json({
+        sandboxId,
+        sandboxUrl,
+        gameId,
+        version: game.version || '1.0.0',
+        launchSessionId: `session-${Date.now()}`
+      });
+    } catch (error) {
+      console.error("Error launching game:", error);
+      res.status(500).json({ message: "Failed to launch game" });
+    }
+  });
+  
+  // Like game
+  apiRouter.post("/games/:id/like", async (req: Request, res: Response) => {
+    try {
+      const gameId = parseInt(req.params.id);
+      const userId = req.user?.id;
+      
+      // In a real implementation, this would store the like in a database table
+      // For now, just verify the game exists
+      const game = await storage.getGameById(gameId);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "Game liked successfully",
+        isLiked: true
+      });
+    } catch (error) {
+      console.error("Error liking game:", error);
+      res.status(500).json({ message: "Failed to like game" });
     }
   });
   
@@ -382,6 +476,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use("/uploads", express.static(uploadsDir));
   
+  // Set up game sandbox proxy
+  const sandboxService = new GameSandboxService();
+  const sandboxProxy = new GameSandboxProxy(sandboxService);
+  app.use("/sandbox", sandboxProxy.createSandboxMiddleware());
+  
+  // Create HTTP server
   const httpServer = createServer(app);
   return httpServer;
 }

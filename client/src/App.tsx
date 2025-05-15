@@ -8,7 +8,7 @@ import UnauthorizedPage from "@/pages/unauthorized";
 import AuthPage from "@/pages/auth-page";
 import Home from "@/pages/Home";
 import Games from "@/pages/Games";
-import GameDetails from "@/pages/GameDetails";
+import GameDetailPage from "@/pages/GameDetailPage";
 import SubmitGame from "@/pages/SubmitGame";
 import Dashboard from "@/pages/dashboard";
 import Header from "@/components/Header";
@@ -24,7 +24,7 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/games" component={Games} />
-          <Route path="/games/:id" component={GameDetails} />
+          <Route path="/games/:id" component={GameDetailPage} />
           
           {/* Protected routes */}
           <ProtectedRoute 
