@@ -8,24 +8,15 @@ export class User {
   private _id: EntityId | null;
   private _username: string;
   private _passwordHash: string;
-  private _email: string | null;
-  private _createdAt: Date;
-  private _isAdmin: boolean;
 
   private constructor(
     id: EntityId | null,
     username: string,
-    passwordHash: string,
-    email: string | null,
-    createdAt: Date,
-    isAdmin: boolean = false
+    passwordHash: string
   ) {
     this._id = id;
     this._username = username;
     this._passwordHash = passwordHash;
-    this._email = email;
-    this._createdAt = createdAt;
-    this._isAdmin = isAdmin;
   }
 
   /**
@@ -33,16 +24,16 @@ export class User {
    */
   public static create(
     username: string,
-    passwordHash: string,
-    email: string | null = null
+    passwordHash: string
   ): User {
+    if (!username || !passwordHash) {
+      throw new Error("Username and password are required");
+    }
+    
     return new User(
       null,
       username,
-      passwordHash,
-      email,
-      new Date(),
-      false
+      passwordHash
     );
   }
 
@@ -52,18 +43,12 @@ export class User {
   public static reconstitute(
     id: number,
     username: string,
-    passwordHash: string,
-    email: string | null,
-    createdAt: Date,
-    isAdmin: boolean = false
+    passwordHash: string
   ): User {
     return new User(
       new EntityId(id),
       username,
-      passwordHash,
-      email,
-      createdAt,
-      isAdmin
+      passwordHash
     );
   }
 
@@ -86,41 +71,6 @@ export class User {
    */
   public get passwordHash(): string {
     return this._passwordHash;
-  }
-
-  /**
-   * Get the email of this user
-   */
-  public get email(): string | null {
-    return this._email;
-  }
-
-  /**
-   * Get the creation date of this user
-   */
-  public get createdAt(): Date {
-    return this._createdAt;
-  }
-
-  /**
-   * Check if this user is an admin
-   */
-  public get isAdmin(): boolean {
-    return this._isAdmin;
-  }
-
-  /**
-   * Set user as admin
-   */
-  public setAdmin(isAdmin: boolean): void {
-    this._isAdmin = isAdmin;
-  }
-
-  /**
-   * Update user's email
-   */
-  public updateEmail(email: string | null): void {
-    this._email = email;
   }
 
   /**

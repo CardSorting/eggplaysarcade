@@ -11,6 +11,8 @@ import { MemRatingRepository } from "../persistence/MemRatingRepository";
 // Import database repositories
 import { DbGameRepository } from "../persistence/DbGameRepository";
 import { DbCategoryRepository } from "../persistence/DbCategoryRepository";
+import { DbUserRepository } from "../persistence/DbUserRepository";
+import { DbRatingRepository } from "../persistence/DbRatingRepository";
 
 import { GameController } from "../../interfaces/api/controllers/GameController";
 import { CategoryController } from "../../interfaces/api/controllers/CategoryController";
@@ -49,9 +51,8 @@ export class DiContainer {
       console.log("Using database repositories for persistence");
       this.registerSingleton<GameRepository>("GameRepository", new DbGameRepository());
       this.registerSingleton<CategoryRepository>("CategoryRepository", new DbCategoryRepository());
-      // TODO: Replace with DB implementations as they are created
-      this.registerSingleton<UserRepository>("UserRepository", new MemUserRepository());
-      this.registerSingleton<RatingRepository>("RatingRepository", new MemRatingRepository());
+      this.registerSingleton<UserRepository>("UserRepository", new DbUserRepository());
+      this.registerSingleton<RatingRepository>("RatingRepository", new DbRatingRepository());
     } else {
       // Fallback to memory repositories
       console.log("Using in-memory repositories for persistence");
