@@ -272,32 +272,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Play game in sandbox
+  // Play game in sandbox using Command Handler pattern
   apiRouter.post("/games/:id/play", async (req: Request, res: Response) => {
     try {
       const gameId = parseInt(req.params.id);
       const userId = req.user?.id; // If using authentication
       
-      const game = await storage.getGameById(gameId);
-      if (!game) {
-        return res.status(404).json({ message: "Game not found" });
-      }
+      // Create a command and use the command handler
+      const command: LaunchGameCommand = { gameId, userId };
+      const result = await launchGameHandler.handle(command);
       
-      // In a real implementation, you would use the LaunchGameCommandHandler
-      // For this demo, we'll create a simulated sandbox URL
-      const sandboxId = `sandbox-${Date.now()}`;
-      const sandboxUrl = `/sandbox/${gameId}`;
-      
-      // Record the play if not the developer testing their own game
-      if (!userId || userId !== game.userId) {
-        await storage.updateGamePlayers(gameId, 1);
-      }
-      
+      // Return the sandbox information
       res.json({
-        sandboxId,
-        sandboxUrl,
+        ...result,
         gameId,
-        version: game.version || '1.0.0',
         launchSessionId: `session-${Date.now()}`
       });
     } catch (error) {

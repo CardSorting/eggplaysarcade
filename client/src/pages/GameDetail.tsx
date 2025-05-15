@@ -28,7 +28,14 @@ const GameDetail = () => {
   // Fetch game details
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/games/${gameId}`],
-    queryFn: getQueryFn()
+    queryFn: getQueryFn({ on401: "returnNull" })
+  });
+  
+  // Fetch game reviews
+  const { data: reviewsData } = useQuery({
+    queryKey: [`/api/games/${gameId}/reviews`],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!gameId
   });
   
   // Play game mutation
@@ -95,7 +102,21 @@ const GameDetail = () => {
     );
   }
   
-  const game = data.game;
+  const game = data?.game;
+  
+  if (!game) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold mb-4">Game Not Found</h1>
+          <p className="text-muted-foreground mb-6">The game you're looking for doesn't exist or has been removed.</p>
+          <Button asChild>
+            <Link href="/">Back to Home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -193,11 +214,42 @@ const GameDetail = () => {
                 <CardTitle>Reviews</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-medium">No reviews yet</h3>
-                  <p className="text-muted-foreground">Be the first to review this game!</p>
-                </div>
+                {reviewsData?.reviews && reviewsData.reviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {reviewsData.reviews.map((review: any) => (
+                      <div key={review.id} className="p-4 border rounded-lg">
+                        <div className="flex items-center mb-2">
+                          <div className="flex items-center">
+                            <User className="h-5 w-5 mr-2 text-muted-foreground" />
+                            <span className="font-medium">{review.user?.username || "Anonymous"}</span>
+                          </div>
+                          <div className="ml-auto flex items-center">
+                            <div className="flex">
+                              {Array(5).fill(0).map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={`h-4 w-4 ${i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`} 
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </p>
+                        {review.content && (
+                          <p className="mt-2">{review.content}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium">No reviews yet</h3>
+                    <p className="text-muted-foreground">Be the first to review this game!</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
