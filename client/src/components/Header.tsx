@@ -5,24 +5,24 @@ export function Header() {
   return (
     <header className="border-b py-4">
       <div className="container flex items-center justify-between">
-        <Link href="/">
-          <a className="text-2xl font-bold">Game Portal</a>
+        <Link href="/" className="text-2xl font-bold">
+          Game Portal
         </Link>
         <nav>
           <ul className="flex space-x-6">
             <li>
-              <Link href="/">
-                <a className="hover:text-primary transition">Home</a>
+              <Link href="/" className="hover:text-primary transition">
+                Home
               </Link>
             </li>
             <li>
-              <Link href="/games">
-                <a className="hover:text-primary transition">Games</a>
+              <Link href="/games" className="hover:text-primary transition">
+                Games
               </Link>
             </li>
             <li>
-              <Link href="/auth">
-                <a className="hover:text-primary transition">Login / Register</a>
+              <Link href="/auth" className="hover:text-primary transition">
+                Login / Register
               </Link>
             </li>
           </ul>

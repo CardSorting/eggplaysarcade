@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Layout } from './../../components/ui/layout';
+import { Layout } from '@/components/ui/layout';
 import { Gamepad2, Users, CodeXml } from "lucide-react";
 
 /**
