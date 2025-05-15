@@ -13,6 +13,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { requireAuth, requireRole, requirePermission } from "./middleware/authMiddleware";
+import { logAuthStatus } from "./middleware/debugMiddleware";
 import { UserRole } from "@/lib/types";
 import passport from "passport";
 
@@ -76,6 +77,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // API routes
   const apiRouter = express.Router();
+  
+  // Apply debug middleware
+  apiRouter.use(logAuthStatus);
   
   // === Authentication routes ===
   apiRouter.post("/register", async (req: Request, res: Response) => {

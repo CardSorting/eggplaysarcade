@@ -193,12 +193,71 @@ const Header = () => {
                   <Search className="h-4 w-4" />
                 </Button>
               </form>
-              <Button
-                onClick={handleSignIn}
-                className="bg-primary hover:bg-primary/90 text-white py-2 rounded-full"
-              >
-                Sign In
-              </Button>
+              
+              {user ? (
+                // User is logged in - show user links
+                <>
+                  <div className="flex items-center space-x-2 p-2 border-t border-gray-800">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.avatarUrl || undefined} alt={user.username} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {user.username.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{user.username}</span>
+                      <span className="text-xs text-muted-foreground">{user.role}</span>
+                    </div>
+                  </div>
+                  
+                  <Button variant="ghost" className="justify-start" onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/dashboard");
+                  }}>
+                    <Gamepad2 className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Button>
+                  
+                  <Button variant="ghost" className="justify-start" onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/profile");
+                  }}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Button>
+                  
+                  <Button variant="ghost" className="justify-start" onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/settings");
+                  }}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="destructive" 
+                    className="mt-2"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </Button>
+                </>
+              ) : (
+                // User is not logged in - show login button
+                <Button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignIn();
+                  }}
+                  className="bg-primary hover:bg-primary/90 text-white py-2 rounded-full"
+                >
+                  Sign In
+                </Button>
+              )}
             </div>
           </div>
         )}
