@@ -260,8 +260,7 @@ const PlayerAuthPage = () => {
 
         {/* Right column - Features */}
         <div className="hidden lg:block lg:flex-1 max-w-xl">
-          <Card className="bg-black text-white border-0 overflow-hidden h-full">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-70"></div>
+          <Card className="bg-primary text-white border-0 overflow-hidden h-full">
             <CardContent className="relative z-10 flex flex-col justify-center h-full p-10">
               <div className="max-w-md mx-auto text-center space-y-6">
                 <h2 className="text-3xl font-bold">Discover Amazing Games</h2>

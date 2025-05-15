@@ -29,7 +29,6 @@ const AuthPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Player Card */}
           <Card className="relative overflow-hidden transition-all hover:shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-pink-500/10 pointer-events-none" />
             <CardHeader>
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                 <Users className="h-6 w-6 text-primary" />
@@ -73,7 +72,6 @@ const AuthPage = () => {
 
           {/* Developer Card */}
           <Card className="relative overflow-hidden transition-all hover:shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 pointer-events-none" />
             <CardHeader>
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                 <Gamepad className="h-6 w-6 text-primary" />
