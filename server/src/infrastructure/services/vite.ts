@@ -1,4 +1,4 @@
-import { Express } from 'express';
+import express, { Express } from 'express';
 import { Server } from 'http';
 import path from 'path';
 import fs from 'fs';

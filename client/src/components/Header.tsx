@@ -37,25 +37,23 @@ const Header = () => {
     <header className="bg-background border-b border-gray-800">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/">
-            <a className="flex items-center cursor-pointer">
-              <GamesLogo />
-            </a>
+          <Link href="/" className="flex items-center cursor-pointer">
+            <GamesLogo />
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             {navLinks.map((link) => (
-              <Link key={link.name} href={link.path}>
-                <a
-                  className={`nav-link text-white hover:text-accent font-medium ${
-                    (location === link.path || 
-                    (link.path !== "/" && location.startsWith(link.path))) ? 
-                    "text-accent active" : ""
-                  }`}
-                >
-                  {link.name}
-                </a>
+              <Link 
+                key={link.name} 
+                href={link.path}
+                className={`nav-link text-white hover:text-accent font-medium ${
+                  (location === link.path || 
+                  (link.path !== "/" && location.startsWith(link.path))) ? 
+                  "text-accent active" : ""
+                }`}
+              >
+                {link.name}
               </Link>
             ))}
           </nav>
@@ -104,13 +102,13 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4">
             {navLinks.map((link) => (
-              <Link key={link.name} href={link.path}>
-                <a 
-                  className="block py-2 text-white hover:text-accent"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.name}
-                </a>
+              <Link 
+                key={link.name} 
+                href={link.path}
+                className="block py-2 text-white hover:text-accent"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.name}
               </Link>
             ))}
             <div className="mt-4 flex flex-col space-y-3">
