@@ -30,21 +30,55 @@ const GameDetail = () => {
   const { user } = useAuth();
   const [inWishlist, setInWishlist] = useState(false);
   
+  // Define types for API responses
+  interface GameResponse {
+    game: {
+      id: number;
+      title: string;
+      description: string;
+      categoryName?: string;
+      thumbnailUrl?: string;
+      gameUrl?: string;
+      rating?: number;
+      players?: number;
+      tags?: string[];
+      instructions?: string;
+      developerName?: string;
+      publishedAt?: string;
+    };
+  }
+  
+  interface ReviewsResponse {
+    reviews: Array<{
+      id: number;
+      rating: number;
+      content?: string;
+      createdAt: string;
+      user?: {
+        username: string;
+      };
+    }>;
+  }
+  
+  interface WishlistResponse {
+    inWishlist: boolean;
+  }
+
   // Fetch game details
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<GameResponse>({
     queryKey: [`/api/games/${gameId}`],
     queryFn: getQueryFn({ on401: "returnNull" })
   });
   
   // Fetch game reviews
-  const { data: reviewsData } = useQuery({
+  const { data: reviewsData } = useQuery<ReviewsResponse>({
     queryKey: [`/api/games/${gameId}/reviews`],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!gameId
   });
   
   // Check wishlist status if user is logged in
-  const { data: wishlistStatus, refetch: refetchWishlistStatus } = useQuery({
+  const { data: wishlistStatus, refetch: refetchWishlistStatus } = useQuery<WishlistResponse>({
     queryKey: [`/api/wishlist/check/${gameId}`],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!user
@@ -52,7 +86,7 @@ const GameDetail = () => {
   
   // Update wishlist state when status changes
   useEffect(() => {
-    if (wishlistStatus) {
+    if (wishlistStatus?.inWishlist !== undefined) {
       setInWishlist(wishlistStatus.inWishlist);
     }
   }, [wishlistStatus]);
@@ -195,13 +229,6 @@ const GameDetail = () => {
   
   const game = data?.game;
   
-  // Use B2 hooks for file access - always call hooks unconditionally
-  const thumbnailUrl = game?.thumbnailUrl || null;
-  const gameFileUrl = game?.gameUrl || null;
-  
-  const imageProps = useB2Image(thumbnailUrl);
-  const { gameUrl, isLoading: gameUrlLoading } = useB2Game(gameFileUrl);
-  
   if (!game) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -215,6 +242,13 @@ const GameDetail = () => {
       </div>
     );
   }
+  
+  // Use B2 hooks for file access - always call hooks unconditionally
+  const thumbnailUrl = game.thumbnailUrl || null;
+  const gameFileUrl = game.gameUrl || null;
+  
+  const imageProps = useB2Image(thumbnailUrl);
+  const { gameUrl, isLoading: gameUrlLoading } = useB2Game(gameFileUrl);
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -328,7 +362,7 @@ const GameDetail = () => {
               <CardContent>
                 {reviewsData?.reviews && reviewsData.reviews.length > 0 ? (
                   <div className="space-y-4">
-                    {reviewsData.reviews.map((review: any) => (
+                    {reviewsData.reviews.map((review) => (
                       <div key={review.id} className="p-4 border rounded-lg">
                         <div className="flex items-center mb-2">
                           <div className="flex items-center">
