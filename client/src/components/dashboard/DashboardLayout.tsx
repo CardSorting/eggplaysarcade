@@ -26,10 +26,15 @@ interface NavItemProps {
   active?: boolean;
 }
 
+// Extended navigation item interface with key property
+interface NavItem extends NavItemProps {
+  key?: string;
+}
+
 const NavItem = ({ label, icon, href, active }: NavItemProps) => {
   return (
     <div className="w-full py-1">
-      <a 
+      <Link 
         href={href}
         className={cn(
           "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
@@ -40,7 +45,7 @@ const NavItem = ({ label, icon, href, active }: NavItemProps) => {
       >
         <span className="mr-3">{icon}</span>
         {label}
-      </a>
+      </Link>
     </div>
   );
 };
@@ -55,12 +60,13 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
   const [location] = useLocation();
   
   // Define navigation items based on user role
-  const getNavItems = () => {
-    const commonItems = [
+  const getNavItems = (): NavItem[] => {
+    const commonItems: NavItem[] = [
       {
         label: "Dashboard",
         icon: <LayoutDashboard className="h-5 w-5" />,
         href: "/dashboard",
+        key: "dashboard"
       }
     ];
     
@@ -101,26 +107,35 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
     // Game Developer navigation
     if (user.role === UserRole.GAME_DEVELOPER) {
       return [
-        ...commonItems,
+        {
+          label: "Dashboard",
+          icon: <LayoutDashboard className="h-5 w-5" />,
+          href: "/dashboard",
+          key: "dashboard"
+        },
         {
           label: "My Games",
           icon: <GamepadIcon className="h-5 w-5" />,
           href: "/dashboard",
+          key: "mygames"
         },
         {
           label: "Submit Game",
           icon: <FileBarChart className="h-5 w-5" />,
           href: "/dashboard/submit",
+          key: "submit"
         },
         {
           label: "Analytics",
           icon: <FileBarChart className="h-5 w-5" />,
-          href: "/dashboard/analytics",
+          href: "/dashboard",
+          key: "analytics"
         },
         {
           label: "Profile",
           icon: <User className="h-5 w-5" />,
-          href: "/dashboard/profile",
+          href: "/dashboard",
+          key: "profile"
         }
       ];
     }
@@ -193,12 +208,12 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
           <nav className="flex-1 px-3 space-y-1">
             {navItems.map((item) => (
               <NavItem
-                key={item.href}
+                key={item.key || item.href}
                 label={item.label}
                 icon={item.icon}
                 href={item.href}
                 active={
-                  activeTab === item.label.toLowerCase() ||
+                  activeTab === (item.key || item.label.toLowerCase()) ||
                   location === item.href
                 }
               />
