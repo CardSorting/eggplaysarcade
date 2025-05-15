@@ -28,19 +28,20 @@ interface NavItemProps {
 
 const NavItem = ({ label, icon, href, active }: NavItemProps) => {
   return (
-    <Button
-      variant={active ? "secondary" : "ghost"}
-      className={cn(
-        "w-full justify-start",
-        active && "bg-muted font-medium"
-      )}
-      asChild
-    >
-      <Link href={href}>
-        <span className="mr-2">{icon}</span>
+    <div className="w-full py-1">
+      <a 
+        href={href}
+        className={cn(
+          "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
+          active 
+            ? "bg-secondary text-secondary-foreground font-medium" 
+            : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+        )}
+      >
+        <span className="mr-3">{icon}</span>
         {label}
-      </Link>
-    </Button>
+      </a>
+    </div>
   );
 };
 
@@ -206,14 +207,13 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
           
           {/* Logout button */}
           <div className="p-4 border-t">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start" 
+            <button
               onClick={handleLogout}
+              className="flex items-center w-full px-3 py-2 text-sm rounded-md text-red-500 hover:bg-red-100/20 transition-colors"
             >
-              <LogOut className="h-5 w-5 mr-2" />
+              <LogOut className="h-5 w-5 mr-3" />
               Logout
-            </Button>
+            </button>
           </div>
         </div>
       </div>
