@@ -1,27 +1,34 @@
-import { User } from '../../domain/entities/User';
-import { GameDTO } from './GameDTO';
+import { User } from "../../../domain/entities/User";
 
 /**
- * DTO for User entities
+ * Data Transfer Object for User
+ * Follows the DTO pattern to map domain entities to data structures suitable for client consumption
  */
 export class UserDTO {
   id: number;
   username: string;
-  games?: GameDTO[];
+  createdAt: Date;
 
-  constructor(user: User) {
-    this.id = user.id.value;
-    this.username = user.username;
-    
-    if (user.games.length > 0) {
-      this.games = user.games.map(game => new GameDTO(game));
-    }
+  private constructor(id: number, username: string, createdAt: Date) {
+    this.id = id;
+    this.username = username;
+    this.createdAt = createdAt;
   }
 
+  /**
+   * Creates a DTO from a User entity
+   */
   static fromEntity(user: User): UserDTO {
-    return new UserDTO(user);
+    return new UserDTO(
+      user.id.value,
+      user.username,
+      user.createdAt
+    );
   }
 
+  /**
+   * Creates DTOs from an array of User entities
+   */
   static fromEntities(users: User[]): UserDTO[] {
     return users.map(user => UserDTO.fromEntity(user));
   }

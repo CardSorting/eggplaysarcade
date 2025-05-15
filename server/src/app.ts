@@ -1,7 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { createServer, Server } from 'http';
 import { setupApiRoutes } from './interfaces/api/routes';
-import * as vite from './infrastructure/services/vite';
+import * as vite from '../vite';
 
 /**
  * Application setup following the Clean Architecture pattern

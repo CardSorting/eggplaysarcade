@@ -26,22 +26,20 @@ const HeroSection = () => {
             Discover, play and share amazing web games created by developers from around the world
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button 
-              className="btn-primary bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-full font-medium text-lg h-auto"
-              asChild
-            >
-              <Link href="/games">
-                <a>Explore Games</a>
-              </Link>
-            </Button>
-            <Button 
-              className="btn-secondary bg-secondary hover:bg-secondary/90 text-white px-8 py-6 rounded-full font-medium text-lg h-auto"
-              asChild
-            >
-              <Link href="/submit">
-                <a>Submit Your Game</a>
-              </Link>
-            </Button>
+            <Link href="/games">
+              <Button 
+                className="btn-primary bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-full font-medium text-lg h-auto"
+              >
+                Explore Games
+              </Button>
+            </Link>
+            <Link href="/submit">
+              <Button 
+                className="btn-secondary bg-secondary hover:bg-secondary/90 text-white px-8 py-6 rounded-full font-medium text-lg h-auto"
+              >
+                Submit Your Game
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
