@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import UnauthorizedPage from "@/pages/unauthorized";
+import AuthPage from "@/pages/auth-page";
 import Home from "@/pages/Home";
 import Games from "@/pages/Games";
 import GameDetails from "@/pages/GameDetails";
@@ -37,6 +38,7 @@ function Router() {
           />
           
           {/* Auth and error pages */}
+          <Route path="/auth" component={AuthPage} />
           <Route path="/unauthorized" component={UnauthorizedPage} />
           <Route component={NotFound} />
         </Switch>

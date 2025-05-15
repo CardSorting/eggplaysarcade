@@ -256,7 +256,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Use authenticated user's ID
-        const userId = req.user.id;
+        const userId = req.user?.id;
+        if (!userId) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
         
         // Set the file paths for storage
         const gameData = {
@@ -296,7 +299,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { value } = req.body;
         
         // Use authenticated user's ID
-        const userId = req.user.id;
+        const userId = req.user?.id;
+        if (!userId) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
         
         // Check if game exists
         const game = await storage.getGameById(gameId);

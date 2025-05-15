@@ -1,16 +1,27 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, User, LogOut, Settings, Gamepad2 } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GameControllerIcon, GamesLogo } from "@/lib/icons";
 
 const Header = () => {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const { user, hasPermission, logoutMutation } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,17 +31,26 @@ const Header = () => {
   };
 
   const handleSignIn = () => {
-    toast({
-      title: "Sign In",
-      description: "Sign in functionality is not implemented in this demo.",
-    });
+    navigate("/auth");
   };
 
-  const navLinks = [
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
+  // Base navigation links available to all users
+  const baseNavLinks = [
     { name: "Home", path: "/" },
     { name: "Games", path: "/games" },
-    { name: "Categories", path: "/games" },
-    { name: "Submit Game", path: "/submit" },
+    { name: "Categories", path: "/games" }
+  ];
+  
+  // Add Submit Game link if user has permission
+  const navLinks = [
+    ...baseNavLinks,
+    ...(hasPermission("submit_games") 
+      ? [{ name: "Submit Game", path: "/dashboard/submit" }] 
+      : [])
   ];
 
   return (
@@ -89,12 +109,56 @@ const Header = () => {
                 <Search className="h-4 w-4" />
               </Button>
             </form>
-            <Button
-              onClick={handleSignIn}
-              className="bg-primary hover:bg-primary/90 text-white rounded-full btn-primary"
-            >
-              Sign In
-            </Button>
+            
+            {user ? (
+              // User is logged in - show user menu
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar>
+                      <AvatarImage src={user.avatarUrl || undefined} alt={user.username} />
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {user.username.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{user.username}</p>
+                      <p className="text-xs text-muted-foreground">{user.email || ''}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                    <Gamepad2 className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              // User is not logged in - show login button
+              <Button
+                onClick={handleSignIn}
+                className="bg-primary hover:bg-primary/90 text-white rounded-full btn-primary"
+              >
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
 
