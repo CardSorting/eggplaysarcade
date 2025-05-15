@@ -46,14 +46,13 @@ const DeveloperSection = () => {
           </div>
           
           <div className="text-center">
-            <Button 
-              className="btn-primary bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-full font-medium text-lg"
-              asChild
-            >
-              <Link href="/submit">
-                <a>Submit Your Game</a>
-              </Link>
-            </Button>
+            <Link href="/submit">
+              <Button 
+                className="btn-primary bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-full font-medium text-lg"
+              >
+                Submit Your Game
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
