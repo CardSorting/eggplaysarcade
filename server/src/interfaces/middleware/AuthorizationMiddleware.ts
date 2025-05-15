@@ -1,20 +1,23 @@
-import { Request, Response, NextFunction } from 'express';
-import { UserRole, RolePermissions } from '../../domain/enums/UserRole';
+import { Request, Response, NextFunction } from "express";
+import { UserRole } from "../../domain/enums/UserRole";
+import { Permission } from "../../domain/valueObjects/Permission";
+import { RolePermissionService } from "../../application/services/RolePermissionService";
 
 /**
  * Middleware to ensure the user has the required permission
  * @param requiredPermission - The permission required to access the resource
  */
-export function requirePermission(requiredPermission: string) {
+export function requirePermission(requiredPermission: Permission) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const userRole = req.user.role as UserRole;
+    const user = req.user;
+    const rolePermissionService = new RolePermissionService();
     
-    if (!userRole || !RolePermissions[userRole]?.includes(requiredPermission)) {
-      return res.status(403).json({ error: 'Forbidden' });
+    if (!rolePermissionService.hasPermission(user.role, requiredPermission)) {
+      return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
     }
 
     next();
@@ -28,13 +31,13 @@ export function requirePermission(requiredPermission: string) {
 export function requireRole(roles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const userRole = req.user.role as UserRole;
+    const user = req.user;
     
-    if (!userRole || !roles.includes(userRole)) {
-      return res.status(403).json({ error: 'Forbidden' });
+    if (!roles.includes(user.role as UserRole)) {
+      return res.status(403).json({ message: "Forbidden: Insufficient role" });
     }
 
     next();
@@ -48,19 +51,19 @@ export function requireRole(roles: UserRole[]) {
 export function requireOwnership(paramIdField: string = 'userId') {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const resourceOwnerId = parseInt(req.params[paramIdField], 10);
-    const userId = req.user.id;
-
-    // Admin can access any resource
-    if (req.user.role === UserRole.ADMIN) {
+    const resourceUserId = parseInt(req.params[paramIdField]);
+    const user = req.user;
+    
+    // Admin can access any user's resources
+    if (user.role === UserRole.ADMIN) {
       return next();
     }
-
-    if (isNaN(resourceOwnerId) || resourceOwnerId !== userId) {
-      return res.status(403).json({ error: 'Forbidden' });
+    
+    if (user.id !== resourceUserId) {
+      return res.status(403).json({ message: "Forbidden: You do not have permission to access this resource" });
     }
 
     next();
