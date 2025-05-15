@@ -469,6 +469,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // === Wishlist Routes ===
+  // Get user's wishlist - requires authentication
+  apiRouter.get(
+    "/wishlist",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const userId = req.user?.id;
+        if (!userId) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const wishlistGames = await storage.getWishlistItems(userId);
+        res.json({ games: wishlistGames });
+      } catch (error) {
+        console.error("Error fetching wishlist:", error);
+        res.status(500).json({ message: "Failed to fetch wishlist" });
+      }
+    }
+  );
+
+  // Add a game to wishlist - requires authentication
+  apiRouter.post(
+    "/wishlist",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const { gameId } = req.body;
+        const userId = req.user?.id;
+        
+        if (!userId) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+        
+        if (!gameId) {
+          return res.status(400).json({ message: "Game ID is required" });
+        }
+
+        // Check if game exists
+        const game = await storage.getGameById(parseInt(gameId));
+        if (!game) {
+          return res.status(404).json({ message: "Game not found" });
+        }
+
+        // Check if already in wishlist
+        const isInWishlist = await storage.isGameInWishlist(userId, parseInt(gameId));
+        if (isInWishlist) {
+          return res.status(200).json({ 
+            message: "Game already in wishlist",
+            inWishlist: true
+          });
+        }
+
+        // Add to wishlist
+        await storage.addToWishlist({
+          userId,
+          gameId: parseInt(gameId)
+        });
+
+        res.status(201).json({
+          message: "Game added to wishlist",
+          inWishlist: true
+        });
+      } catch (error) {
+        console.error("Error adding to wishlist:", error);
+        res.status(500).json({ message: "Failed to add game to wishlist" });
+      }
+    }
+  );
+
+  // Remove a game from wishlist - requires authentication
+  apiRouter.delete(
+    "/wishlist/:gameId",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const gameId = parseInt(req.params.gameId);
+        const userId = req.user?.id;
+        
+        if (!userId) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        // Check if in wishlist
+        const isInWishlist = await storage.isGameInWishlist(userId, gameId);
+        if (!isInWishlist) {
+          return res.status(404).json({ message: "Game not in wishlist" });
+        }
+
+        // Remove from wishlist
+        await storage.removeFromWishlist(userId, gameId);
+
+        res.json({
+          message: "Game removed from wishlist",
+          inWishlist: false
+        });
+      } catch (error) {
+        console.error("Error removing from wishlist:", error);
+        res.status(500).json({ message: "Failed to remove game from wishlist" });
+      }
+    }
+  );
+
+  // Check if a game is in user's wishlist - requires authentication
+  apiRouter.get(
+    "/wishlist/check/:gameId",
+    requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const gameId = parseInt(req.params.gameId);
+        const userId = req.user?.id;
+        
+        if (!userId) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const isInWishlist = await storage.isGameInWishlist(userId, gameId);
+        
+        res.json({ inWishlist: isInWishlist });
+      } catch (error) {
+        console.error("Error checking wishlist:", error);
+        res.status(500).json({ message: "Failed to check wishlist status" });
+      }
+    }
+  );
+  
   // Mount API router
   app.use("/api", apiRouter);
   

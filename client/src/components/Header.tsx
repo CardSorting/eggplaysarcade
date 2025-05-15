@@ -109,6 +109,15 @@ const Header = () => {
     }
   ];
   
+  // Add wishlist item if user is authenticated
+  const userNavItems = user 
+    ? [{ 
+        name: "Wishlist", 
+        path: "/wishlist", 
+        icon: <Heart className="w-5 h-5 mr-2" /> 
+      }] 
+    : [];
+  
   // Add developer specific items if the user has permission
   const developerNavItems = hasPermission("submit_games") 
     ? [{ 

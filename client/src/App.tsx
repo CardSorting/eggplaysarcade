@@ -11,6 +11,7 @@ import Games from "@/pages/Games";
 import GameDetail from "@/pages/GameDetail";
 import SubmitGame from "@/pages/SubmitGame";
 import Dashboard from "@/pages/dashboard";
+import Wishlist from "@/pages/Wishlist";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -35,6 +36,10 @@ function Router() {
             path="/dashboard/submit" 
             component={SubmitGame} 
             requiredPermission="submit_games" 
+          />
+          <ProtectedRoute 
+            path="/wishlist" 
+            component={Wishlist} 
           />
           
           {/* Auth and error pages */}
