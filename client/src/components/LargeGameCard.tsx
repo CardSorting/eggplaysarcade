@@ -23,11 +23,15 @@ const LargeGameCard = ({ game }: LargeGameCardProps) => {
     <Card className="game-card bg-card rounded-xl overflow-hidden">
       <Link href={`/games/${game.id}`}>
         <a className="block h-52 w-full overflow-hidden">
-          <img 
-            src={game.thumbnailUrl} 
-            alt={game.title} 
-            className="w-full h-52 object-cover hover:scale-105 transition-transform duration-300"
-          />
+          {imageProps.src ? (
+            <img 
+              {...imageProps}
+              alt={game.title} 
+              className={`w-full h-52 object-cover hover:scale-105 transition-transform duration-300 ${imageProps.className}`}
+            />
+          ) : (
+            <Skeleton className="w-full h-52" />
+          )}
         </a>
       </Link>
       <CardContent className="p-5">

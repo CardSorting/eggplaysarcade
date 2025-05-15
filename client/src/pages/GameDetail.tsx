@@ -3,10 +3,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useB2Image, useB2Game } from "@/hooks/use-b2-file";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import {
   Gamepad,
@@ -61,9 +63,17 @@ const GameDetail = () => {
       const res = await apiRequest('POST', `/api/games/${gameId}/play`);
       return res.json();
     },
-    onSuccess: (data) => {
-      // Redirect to the sandbox URL
-      window.open(data.sandboxUrl, '_blank', 'noopener,noreferrer');
+    onSuccess: () => {
+      // Open the game in a new tab using the B2 presigned URL
+      if (gameUrl) {
+        window.open(gameUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        toast({
+          title: "Game loading",
+          description: "Please wait while we prepare the game file",
+          variant: "default",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -185,6 +195,10 @@ const GameDetail = () => {
   
   const game = data?.game;
   
+  // Use B2 hooks for file access
+  const imageProps = game ? useB2Image(game.thumbnailUrl) : { src: '' };
+  const { gameUrl, isLoading: gameUrlLoading } = game ? useB2Game(game.gameUrl) : { gameUrl: null, isLoading: false };
+  
   if (!game) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -208,11 +222,15 @@ const GameDetail = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="w-32 h-32 rounded-lg overflow-hidden shrink-0">
-              <img 
-                src={game.thumbnailUrl || "https://via.placeholder.com/128"}
-                alt={game.title}
-                className="w-full h-full object-cover"
-              />
+              {imageProps.src ? (
+                <img 
+                  {...imageProps}
+                  alt={game.title}
+                  className={`w-full h-full object-cover ${imageProps.className}`}
+                />
+              ) : (
+                <Skeleton className="w-full h-full" />
+              )}
             </div>
             
             <div className="flex-1">
