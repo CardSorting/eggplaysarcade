@@ -4,6 +4,7 @@ import { UserRepository } from "../../domain/repositories/UserRepository";
 import { db } from "../../../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { UserRole } from "../../domain/enums/UserRole";
 
 /**
  * Database implementation of the UserRepository
@@ -60,7 +61,11 @@ export class DbUserRepository implements UserRepository {
         .update(users)
         .set({
           username: user.username,
-          password: user.passwordHash
+          password: user.passwordHash,
+          role: user.role,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          bio: user.bio
         })
         .where(eq(users.id, user.id.value))
         .returning();
@@ -72,7 +77,11 @@ export class DbUserRepository implements UserRepository {
         .insert(users)
         .values({
           username: user.username,
-          password: user.passwordHash
+          password: user.passwordHash,
+          role: user.role,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          bio: user.bio
         })
         .returning();
       
@@ -96,7 +105,11 @@ export class DbUserRepository implements UserRepository {
     return User.reconstitute(
       userData.id,
       userData.username,
-      userData.password
+      userData.password,
+      userData.role as UserRole,
+      userData.email,
+      userData.avatarUrl,
+      userData.bio
     );
   }
 }
