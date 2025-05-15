@@ -1,31 +1,24 @@
 import { Button } from "@/components/ui/button";
+import { AlertTriangle } from "lucide-react";
 import { Link } from "wouter";
-import { ArrowLeft, ShieldOff } from "lucide-react";
 
 export default function UnauthorizedPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="max-w-md w-full p-8 bg-card border rounded-lg shadow-sm text-center space-y-6">
-        <div className="flex justify-center">
-          <ShieldOff className="h-16 w-16 text-destructive" />
-        </div>
-
-        <h1 className="text-3xl font-bold tracking-tight">Access Denied</h1>
-        
-        <p className="text-muted-foreground">
-          You don't have the required permissions to access this page. 
-          If you believe this is a mistake, please contact the administrator.
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="max-w-md w-full px-6 py-12 bg-card shadow-lg rounded-lg text-center">
+        <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-6" />
+        <h1 className="text-3xl font-bold mb-2">Unauthorized Access</h1>
+        <p className="text-muted-foreground mb-8">
+          You don't have permission to access this page. If you believe this is an
+          error, please contact the administrator.
         </p>
-        
-        <div className="pt-4 flex flex-col space-y-3">
-          <Button asChild>
+        <div className="flex gap-4 justify-center">
+          <Button asChild variant="outline">
             <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Return to Home
+              Return Home
             </Link>
           </Button>
-          
-          <Button variant="outline" asChild>
+          <Button asChild>
             <Link href="/dashboard">
               Go to Dashboard
             </Link>

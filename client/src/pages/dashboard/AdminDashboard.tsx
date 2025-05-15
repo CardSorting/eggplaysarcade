@@ -55,7 +55,7 @@ export default function AdminDashboard() {
                   <CardTitle className="text-sm font-medium">
                     Games Published
                   </CardTitle>
-                  <Games className="h-4 w-4 text-muted-foreground" />
+                  <GamepadIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">45</div>
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
                   <CardTitle className="text-sm font-medium">
                     Active Categories
                   </CardTitle>
-                  <Category className="h-4 w-4 text-muted-foreground" />
+                  <ListTodo className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">8</div>

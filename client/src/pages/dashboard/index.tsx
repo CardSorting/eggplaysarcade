@@ -1,18 +1,26 @@
-import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
 import { UserRole } from "@/lib/types";
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+import { Loader2 } from "lucide-react";
 import AdminDashboard from "./AdminDashboard";
-import DeveloperDashboard from "./DeveloperDashboard";
-import PlayerDashboard from "./PlayerDashboard";
 
 /**
- * Dashboard router component that directs users to the appropriate dashboard
- * based on their role.
+ * Dashboard router component that directs users to the appropriate
+ * dashboard based on their role
  */
-export default function Dashboard() {
+export default function DashboardRouter() {
   const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    // If user is loaded and is not authenticated, redirect to auth page
+    if (!isLoading && !user) {
+      setLocation("/auth");
+    }
+  }, [user, isLoading, setLocation]);
+
+  // Show loading spinner while checking authentication
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -21,22 +29,29 @@ export default function Dashboard() {
     );
   }
 
-  // This should never happen due to the ProtectedRoute,
-  // but we handle it just in case
+  // If no user, return null (the useEffect will handle redirection)
   if (!user) {
     return null;
   }
 
-  // Render the appropriate dashboard based on user role
+  // Direct to the appropriate dashboard based on user role
   switch (user.role) {
     case UserRole.ADMIN:
       return <AdminDashboard />;
+      
     case UserRole.GAME_DEVELOPER:
-      return <DeveloperDashboard />;
+      // For now just using the admin dashboard as placeholder
+      // In the future, implement a separate DeveloperDashboard component
+      return <AdminDashboard />;
+      
     case UserRole.PLAYER:
-      return <PlayerDashboard />;
+      // For now just using the admin dashboard as placeholder
+      // In the future, implement a separate PlayerDashboard component
+      return <AdminDashboard />;
+      
     default:
-      // Fallback to player dashboard if role is unknown
-      return <PlayerDashboard />;
+      // If role is not recognized, redirect to home
+      setLocation("/");
+      return null;
   }
 }

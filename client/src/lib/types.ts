@@ -107,5 +107,5 @@ export const RolePermissions: Record<UserRole, Permission[]> = {
     'rate_games',
     'edit_own_profile',
     'manage_playlists'
-  ],
+  ]
 };

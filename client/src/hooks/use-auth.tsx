@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<User | null, Error>({
+  } = useQuery<User | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
@@ -51,14 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
-        title: "Login successful",
-        description: `Welcome back, ${user.username}!`,
+        title: "Welcome back!",
+        description: `Logged in as ${user.username}`,
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: error.message || "Invalid username or password",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Registration failed",
-        description: error.message || "Could not create account",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -105,17 +105,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Function to check if user has a specific permission
   const hasPermission = (permission: Permission): boolean => {
-    if (!user || !user.role) return false;
-    
-    return RolePermissions[user.role as UserRole]?.includes(permission) || false;
+    if (!user) return false;
+    const userRolePermissions = RolePermissions[user.role];
+    return userRolePermissions.includes(permission);
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user ?? null,
         isLoading,
         error,
         hasPermission,

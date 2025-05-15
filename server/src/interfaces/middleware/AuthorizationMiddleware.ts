@@ -4,84 +4,87 @@ import { Permission } from "../../domain/value-objects/Permission";
 import { RolePermissionService } from "../../application/services/RolePermissionService";
 
 /**
- * Middleware for role and permission-based authorization
- * Following Clean Architecture principles for interface adapters
+ * Middleware to ensure a user is authenticated before accessing a route
  */
 export class AuthorizationMiddleware {
-  private rolePermissionService: RolePermissionService;
+  private readonly rolePermissionService: RolePermissionService;
 
-  constructor(rolePermissionService: RolePermissionService) {
-    this.rolePermissionService = rolePermissionService;
+  constructor() {
+    this.rolePermissionService = new RolePermissionService();
   }
 
   /**
-   * Middleware to restrict access to specific roles
+   * Middleware to check if a user is authenticated
    */
-  public restrictToRoles(allowedRoles: UserRole[]) {
-    return (req: Request, res: Response, next: NextFunction) => {
-      // Check if user is authenticated
+  public requireAuth = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): void => {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ message: "No user found in session" });
+      return;
+    }
+
+    next();
+  };
+
+  /**
+   * Middleware to check if a user has a specific role
+   */
+  public requireRole = (role: UserRole) => {
+    return (req: Request, res: Response, next: NextFunction): void => {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Authentication required' });
+        res.status(401).json({ message: "Authentication required" });
+        return;
       }
 
-      // Check if user has one of the allowed roles
-      const userRole = req.user?.role as UserRole;
-      
-      if (!userRole || !allowedRoles.includes(userRole)) {
-        return res.status(403).json({ 
-          message: 'Access denied: insufficient permissions' 
+      if (!req.user) {
+        res.status(401).json({ message: "No user found in session" });
+        return;
+      }
+
+      if (req.user.role !== role) {
+        res.status(403).json({ 
+          message: `Access denied. Required role: ${role}` 
         });
+        return;
       }
 
       next();
     };
-  }
+  };
 
   /**
-   * Middleware to restrict access based on permissions
+   * Middleware to check if a user has a specific permission
    */
-  public requirePermission(requiredPermission: string) {
-    return (req: Request, res: Response, next: NextFunction) => {
-      // Check if user is authenticated
+  public requirePermission = (permissionString: string) => {
+    return (req: Request, res: Response, next: NextFunction): void => {
       if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Authentication required' });
+        res.status(401).json({ message: "Authentication required" });
+        return;
       }
 
-      // Check if user role has the required permission
-      const userRole = req.user?.role as UserRole;
+      if (!req.user) {
+        res.status(401).json({ message: "No user found in session" });
+        return;
+      }
+
+      const userRole = req.user.role as UserRole;
       
-      if (!userRole || !this.rolePermissionService.roleHasPermission(userRole, requiredPermission)) {
-        return res.status(403).json({ 
-          message: `Access denied: missing required permission: ${requiredPermission}` 
+      if (!this.rolePermissionService.roleHasPermission(userRole, permissionString)) {
+        res.status(403).json({ 
+          message: `Access denied. Required permission: ${permissionString}` 
         });
+        return;
       }
 
       next();
     };
-  }
-
-  /**
-   * Middleware to restrict access to resource owners or admins
-   */
-  public restrictToOwnerOrAdmin(getUserIdFromParams: (req: Request) => number) {
-    return (req: Request, res: Response, next: NextFunction) => {
-      // Check if user is authenticated
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Authentication required' });
-      }
-
-      const userId = req.user?.id;
-      const resourceOwnerId = getUserIdFromParams(req);
-      const userRole = req.user?.role as UserRole;
-
-      // Allow access if user is admin or the resource owner
-      if (userRole === UserRole.ADMIN || userId === resourceOwnerId) {
-        next();
-      } else {
-        return res.status(403).json({ 
-          message: 'Access denied: you can only access your own resources' 
-        });
-      }
-    };
-  }
+  };
 }
