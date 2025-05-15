@@ -8,14 +8,13 @@ import {
   Users, 
   Settings, 
   FileBarChart, 
-  Gamepad as GamepadIcon, 
+  GamepadIcon, 
   LogOut, 
   ListTodo, 
-  Star as StarIcon,
+  StarIcon,
   BookMarked,
   User,
-  Trophy,
-  ScrollText
+  Trophy
 } from "lucide-react";
 import { UserRole } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -76,47 +75,31 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
     // Admin-specific navigation items
     if (user.role === UserRole.ADMIN) {
       return [
-        {
-          label: "Overview",
-          icon: <LayoutDashboard className="h-5 w-5" />,
-          href: "/dashboard/admin/overview",
-          key: "admin-overview"
-        },
-        {
-          label: "Game Submissions",
-          icon: <ScrollText className="h-5 w-5" />,
-          href: "/dashboard/admin/submissions",
-          key: "admin-submissions"
-        },
+        ...commonItems,
         {
           label: "Users",
           icon: <Users className="h-5 w-5" />,
-          href: "/dashboard/admin/users",
-          key: "admin-users"
+          href: "/dashboard/users",
         },
         {
           label: "Games",
           icon: <GamepadIcon className="h-5 w-5" />,
-          href: "/dashboard/admin/games",
-          key: "admin-games"
+          href: "/dashboard/games",
         },
         {
           label: "Categories",
           icon: <ListTodo className="h-5 w-5" />,
-          href: "/dashboard/admin/categories",
-          key: "admin-categories"
+          href: "/dashboard/categories",
         },
         {
           label: "Analytics",
           icon: <FileBarChart className="h-5 w-5" />,
-          href: "/dashboard/admin/analytics",
-          key: "admin-analytics"
+          href: "/dashboard/analytics",
         },
         {
           label: "Settings",
           icon: <Settings className="h-5 w-5" />,
-          href: "/dashboard/admin/settings",
-          key: "admin-settings"
+          href: "/dashboard/settings",
         }
       ];
     }

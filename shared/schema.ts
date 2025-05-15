@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, jsonb, uuid, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -7,16 +7,6 @@ export enum UserRole {
   ADMIN = 'admin',
   GAME_DEVELOPER = 'game_developer',
   PLAYER = 'player'
-}
-
-// Submission status enum
-export enum SubmissionStatus {
-  DRAFT = 'draft',
-  SUBMITTED = 'submitted',
-  IN_REVIEW = 'in_review',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  PUBLISHED = 'published'
 }
 
 export const users = pgTable("users", {
@@ -75,24 +65,6 @@ export const wishlists = pgTable("wishlists", {
   }
 });
 
-// Game submissions table for tracking game review and publishing process
-export const gameSubmissions = pgTable("game_submissions", {
-  id: serial("id").primaryKey(),
-  gameId: integer("game_id"),  // Null for new games
-  developerId: integer("developer_id").notNull().references(() => users.id),
-  versionNumber: text("version_number").notNull(),
-  status: text("status", { enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'published'] }).notNull().default(SubmissionStatus.DRAFT),
-  bundleId: text("bundle_id"),
-  rejectionReason: text("rejection_reason"),
-  reviewNotes: jsonb("review_notes").default([]),
-  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
-  reviewedAt: timestamp("reviewed_at"),
-  publishedAt: timestamp("published_at"),
-  reviewerId: integer("reviewer_id").references(() => users.id),
-  // Store submission metadata as JSON
-  metadata: jsonb("metadata").notNull()
-});
-
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -144,51 +116,6 @@ export const insertWishlistSchema = createInsertSchema(wishlists).pick({
   gameId: true,
 });
 
-// Define review note interface for Zod schema
-const reviewNoteSchema = z.object({
-  id: z.string(),
-  content: z.string(),
-  severity: z.enum(['info', 'warning', 'critical']),
-  createdAt: z.date(),
-  reviewerId: z.string(),
-  isResolved: z.boolean(),
-  resolvedAt: z.date().optional()
-});
-
-// Define game submission metadata schema
-const gameSubmissionMetadataSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  shortDescription: z.string().optional(),
-  instructions: z.string().optional(),
-  features: z.array(z.string()).optional(),
-  categories: z.array(z.string()).optional(),
-  tags: z.array(z.string()).optional(),
-  technicalDetails: z.object({
-    hasExternalAPIs: z.boolean().optional(),
-    hasServerSideCode: z.boolean().optional(),
-    thirdPartyLibraries: z.array(z.string()).optional()
-  }).optional(),
-  assets: z.object({
-    iconImageUrl: z.string().optional(),
-    headerImageUrl: z.string().optional(),
-    screenshotUrls: z.array(z.string()).optional()
-  }).optional()
-});
-
-// Create insert schema for game submissions
-export const insertGameSubmissionSchema = createInsertSchema(gameSubmissions)
-  .omit({
-    id: true,
-    submittedAt: true,
-    reviewedAt: true,
-    publishedAt: true,
-  })
-  .extend({
-    reviewNotes: z.array(reviewNoteSchema).optional(),
-    metadata: gameSubmissionMetadataSchema
-  });
-
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
@@ -206,11 +133,3 @@ export type Rating = typeof ratings.$inferSelect;
 
 export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
 export type Wishlist = typeof wishlists.$inferSelect;
-
-export type ReviewNote = z.infer<typeof reviewNoteSchema>;
-export type GameSubmissionMetadata = z.infer<typeof gameSubmissionMetadataSchema>;
-export type InsertGameSubmission = z.infer<typeof insertGameSubmissionSchema>;
-export type GameSubmission = typeof gameSubmissions.$inferSelect & {
-  metadata: GameSubmissionMetadata;
-  reviewNotes: ReviewNote[];
-};

@@ -25,7 +25,7 @@ import {
   ChevronDown, 
   Minus, 
   Users, 
-  Gamepad as GameController, 
+  GameController, 
   ScrollText, 
   FolderIcon 
 } from "lucide-react";
@@ -230,9 +230,9 @@ const AdminDashboardOverview = () => {
   };
 
   // Use real data when available, otherwise use mock data for demo
-  const stats = (dashboardStats as any)?.stats || mockData.stats;
-  const charts = (dashboardStats as any)?.charts || mockData.charts;
-  const recentActivities = (dashboardStats as any)?.recentActivities || mockData.recentActivities;
+  const stats = dashboardStats?.stats || mockData.stats;
+  const charts = dashboardStats?.charts || mockData.charts;
+  const recentActivities = dashboardStats?.recentActivities || mockData.recentActivities;
 
   return (
     <>
@@ -332,7 +332,7 @@ const AdminDashboardOverview = () => {
                       nameKey="name"
                       label={(entry) => entry.name}
                     >
-                      {charts.submissionStatus.map((entry: any) => (
+                      {charts.submissionStatus.map((entry) => (
                         <Cell 
                           key={`cell-${entry.status}`} 
                           fill={SUBMISSION_STATUS_COLORS[entry.status]} 
@@ -362,7 +362,7 @@ const AdminDashboardOverview = () => {
                     formatter={(value) => [`${formatNumber(value as number)} plays`, "Plays"]}
                   />
                   <Bar dataKey="plays" fill="#3b82f6">
-                    {charts.gamePlays.map((_: any, index: number) => (
+                    {charts.gamePlays.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
