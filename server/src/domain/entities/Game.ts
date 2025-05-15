@@ -1,25 +1,27 @@
-import { Rating } from './Rating';
-import { User } from './User';
-import { Category } from './Category';
-import { EntityId } from '../value-objects/EntityId';
+import { EntityId } from "../value-objects/EntityId";
+import { Rating } from "./Rating";
 
+/**
+ * Game entity following the Domain-Driven Design (DDD) approach
+ * This is a core domain entity representing a game in the system
+ */
 export class Game {
-  private _id: EntityId;
-  private _title: string;
-  private _description: string;
-  private _instructions: string;
-  private _thumbnailUrl: string;
-  private _gameUrl: string;
-  private _categoryId: EntityId;
-  private _tags: string[] = [];
-  private _publishedAt: Date;
-  private _userId: EntityId;
-  private _rating: number = 0;
-  private _players: number = 0;
-  private _category?: Category;
-  private _user?: User;
-  private _ratings: Rating[] = [];
+  id: EntityId;
+  title: string;
+  description: string;
+  instructions: string;
+  thumbnailUrl: string;
+  gameUrl: string;
+  createdAt: Date;
+  playCount: number;
+  categoryId: EntityId;
+  userId: EntityId;
+  tags: string[];
+  ratings?: Rating[];
 
+  /**
+   * Create a new Game entity
+   */
   constructor(
     id: EntityId,
     title: string,
@@ -30,196 +32,53 @@ export class Game {
     categoryId: EntityId,
     userId: EntityId,
     tags: string[] = [],
-    publishedAt: Date = new Date(),
-    rating: number = 0,
-    players: number = 0
+    createdAt: Date = new Date(),
+    playCount: number = 0,
+    ratings?: Rating[]
   ) {
-    this._id = id;
-    this._title = title;
-    this._description = description;
-    this._instructions = instructions;
-    this._thumbnailUrl = thumbnailUrl;
-    this._gameUrl = gameUrl;
-    this._categoryId = categoryId;
-    this._userId = userId;
-    this._tags = tags;
-    this._publishedAt = publishedAt;
-    this._rating = rating;
-    this._players = players;
+    this.id = id;
+    this.title = title;
+    this.description = description;
+    this.instructions = instructions;
+    this.thumbnailUrl = thumbnailUrl;
+    this.gameUrl = gameUrl;
+    this.createdAt = createdAt;
+    this.playCount = playCount;
+    this.categoryId = categoryId;
+    this.userId = userId;
+    this.tags = tags;
+    this.ratings = ratings;
   }
 
-  // Getters
-  get id(): EntityId {
-    return this._id;
+  /**
+   * Increment the play count
+   * @param amount Number to increment by (default: 1)
+   */
+  incrementPlayCount(amount: number = 1): void {
+    this.playCount += amount;
   }
 
-  get title(): string {
-    return this._title;
-  }
-
-  get description(): string {
-    return this._description;
-  }
-
-  get instructions(): string {
-    return this._instructions;
-  }
-
-  get thumbnailUrl(): string {
-    return this._thumbnailUrl;
-  }
-
-  get gameUrl(): string {
-    return this._gameUrl;
-  }
-
-  get categoryId(): EntityId {
-    return this._categoryId;
-  }
-
-  get tags(): string[] {
-    return [...this._tags];
-  }
-
-  get publishedAt(): Date {
-    return new Date(this._publishedAt);
-  }
-
-  get userId(): EntityId {
-    return this._userId;
-  }
-
-  get rating(): number {
-    return this._rating;
-  }
-
-  get players(): number {
-    return this._players;
-  }
-
-  get category(): Category | undefined {
-    return this._category;
-  }
-
-  get user(): User | undefined {
-    return this._user;
-  }
-
-  get ratings(): Rating[] {
-    return [...this._ratings];
-  }
-
-  // Setters and domain methods
-  setCategory(category: Category): void {
-    this._category = category;
-  }
-
-  setUser(user: User): void {
-    this._user = user;
-  }
-
-  setRatings(ratings: Rating[]): void {
-    this._ratings = [...ratings];
-    this.recalculateRating();
-  }
-
+  /**
+   * Add a rating to this game
+   * @param rating Rating to add
+   */
   addRating(rating: Rating): void {
-    this._ratings.push(rating);
-    this.recalculateRating();
-  }
-
-  incrementPlayers(increment: number = 1): void {
-    this._players += increment;
-  }
-
-  private recalculateRating(): void {
-    if (this._ratings.length === 0) {
-      this._rating = 0;
-      return;
+    if (!this.ratings) {
+      this.ratings = [];
     }
-
-    const sum = this._ratings.reduce((total, rating) => total + rating.value, 0);
-    this._rating = Math.round((sum / this._ratings.length) * 10) / 10; // Round to 1 decimal place
+    this.ratings.push(rating);
   }
 
-  // Factory method for creating a new game instance
-  static create(
-    title: string,
-    description: string,
-    instructions: string,
-    thumbnailUrl: string,
-    gameUrl: string,
-    categoryId: EntityId,
-    userId: EntityId,
-    tags: string[] = []
-  ): Game {
-    const id = EntityId.generate();
-    const now = new Date();
+  /**
+   * Calculate the average rating
+   * @returns Average rating or null if no ratings
+   */
+  getAverageRating(): number | null {
+    if (!this.ratings || this.ratings.length === 0) {
+      return null;
+    }
     
-    return new Game(
-      id,
-      title,
-      description,
-      instructions,
-      thumbnailUrl,
-      gameUrl,
-      categoryId,
-      userId,
-      tags,
-      now,
-      0,
-      0
-    );
-  }
-
-  // Factory method for reconstructing a game from persistence
-  static reconstitute(
-    id: number,
-    title: string,
-    description: string,
-    instructions: string,
-    thumbnailUrl: string,
-    gameUrl: string,
-    categoryId: number,
-    userId: number,
-    tags: string[] = [],
-    publishedAt: Date,
-    rating: number,
-    players: number
-  ): Game {
-    return new Game(
-      new EntityId(id),
-      title,
-      description,
-      instructions,
-      thumbnailUrl,
-      gameUrl,
-      new EntityId(categoryId),
-      new EntityId(userId),
-      tags,
-      publishedAt,
-      rating,
-      players
-    );
-  }
-
-  // Returns a plain object representation of the game for DTOs
-  toDTO(): Record<string, any> {
-    return {
-      id: this._id.value,
-      title: this._title,
-      description: this._description,
-      instructions: this._instructions,
-      thumbnailUrl: this._thumbnailUrl,
-      gameUrl: this._gameUrl,
-      categoryId: this._categoryId.value,
-      tags: [...this._tags],
-      publishedAt: this._publishedAt,
-      userId: this._userId.value,
-      rating: this._rating,
-      players: this._players,
-      category: this._category ? this._category.toDTO() : undefined,
-      user: this._user ? this._user.toDTO() : undefined
-    };
+    const sum = this.ratings.reduce((acc, rating) => acc + rating.value, 0);
+    return parseFloat((sum / this.ratings.length).toFixed(1));
   }
 }

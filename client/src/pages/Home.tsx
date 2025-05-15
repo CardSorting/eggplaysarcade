@@ -42,10 +42,8 @@ const Home = () => {
             <h2 className="font-heading text-2xl md:text-3xl font-bold text-white">
               Featured Games
             </h2>
-            <Link href="/games">
-              <a className="text-accent hover:text-accent/80 font-medium flex items-center">
-                View All <i className="ri-arrow-right-line ml-2"></i>
-              </a>
+            <Link href="/games" className="text-accent hover:text-accent/80 font-medium flex items-center">
+              View All <i className="ri-arrow-right-line ml-2"></i>
             </Link>
           </div>
 
@@ -102,10 +100,8 @@ const Home = () => {
             <h2 className="font-heading text-2xl md:text-3xl font-bold text-white">
               Most Popular
             </h2>
-            <Link href="/games">
-              <a className="text-accent hover:text-accent/80 font-medium flex items-center">
-                View All <i className="ri-arrow-right-line ml-2"></i>
-              </a>
+            <Link href="/games" className="text-accent hover:text-accent/80 font-medium flex items-center">
+              View All <i className="ri-arrow-right-line ml-2"></i>
             </Link>
           </div>
 
