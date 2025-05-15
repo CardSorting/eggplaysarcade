@@ -19,6 +19,10 @@ import { Footer } from "@/components/Footer";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
+// Admin pages
+import AdminOverview from "@/pages/dashboard/admin/Overview";
+import GameSubmissions from "@/pages/dashboard/admin/GameSubmissions";
+
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -54,6 +58,18 @@ function Router() {
           <ProtectedRoute 
             path="/wishlist" 
             component={Wishlist} 
+          />
+          
+          {/* Admin routes */}
+          <ProtectedRoute 
+            path="/dashboard/admin/overview" 
+            component={AdminOverview} 
+            requiredPermission="manage_games" 
+          />
+          <ProtectedRoute 
+            path="/dashboard/admin/submissions" 
+            component={GameSubmissions} 
+            requiredPermission="manage_games" 
           />
           
           {/* Auth and error pages */}

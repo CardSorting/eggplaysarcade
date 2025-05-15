@@ -8,13 +8,14 @@ import {
   Users, 
   Settings, 
   FileBarChart, 
-  GamepadIcon, 
+  Gamepad as GamepadIcon, 
   LogOut, 
   ListTodo, 
-  StarIcon,
+  Star as StarIcon,
   BookMarked,
   User,
-  Trophy
+  Trophy,
+  ScrollText
 } from "lucide-react";
 import { UserRole } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -75,31 +76,47 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
     // Admin-specific navigation items
     if (user.role === UserRole.ADMIN) {
       return [
-        ...commonItems,
+        {
+          label: "Overview",
+          icon: <LayoutDashboard className="h-5 w-5" />,
+          href: "/dashboard/admin/overview",
+          key: "admin-overview"
+        },
+        {
+          label: "Game Submissions",
+          icon: <ScrollText className="h-5 w-5" />,
+          href: "/dashboard/admin/submissions",
+          key: "admin-submissions"
+        },
         {
           label: "Users",
           icon: <Users className="h-5 w-5" />,
-          href: "/dashboard/users",
+          href: "/dashboard/admin/users",
+          key: "admin-users"
         },
         {
           label: "Games",
           icon: <GamepadIcon className="h-5 w-5" />,
-          href: "/dashboard/games",
+          href: "/dashboard/admin/games",
+          key: "admin-games"
         },
         {
           label: "Categories",
           icon: <ListTodo className="h-5 w-5" />,
-          href: "/dashboard/categories",
+          href: "/dashboard/admin/categories",
+          key: "admin-categories"
         },
         {
           label: "Analytics",
           icon: <FileBarChart className="h-5 w-5" />,
-          href: "/dashboard/analytics",
+          href: "/dashboard/admin/analytics",
+          key: "admin-analytics"
         },
         {
           label: "Settings",
           icon: <Settings className="h-5 w-5" />,
-          href: "/dashboard/settings",
+          href: "/dashboard/admin/settings",
+          key: "admin-settings"
         }
       ];
     }

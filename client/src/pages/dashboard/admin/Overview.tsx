@@ -25,7 +25,7 @@ import {
   ChevronDown, 
   Minus, 
   Users, 
-  GameController, 
+  Gamepad as GameController, 
   ScrollText, 
   FolderIcon 
 } from "lucide-react";
