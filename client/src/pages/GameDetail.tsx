@@ -195,9 +195,12 @@ const GameDetail = () => {
   
   const game = data?.game;
   
-  // Use B2 hooks for file access
-  const imageProps = game ? useB2Image(game.thumbnailUrl) : { src: '' };
-  const { gameUrl, isLoading: gameUrlLoading } = game ? useB2Game(game.gameUrl) : { gameUrl: null, isLoading: false };
+  // Use B2 hooks for file access - always call hooks unconditionally
+  const thumbnailUrl = game?.thumbnailUrl || null;
+  const gameFileUrl = game?.gameUrl || null;
+  
+  const imageProps = useB2Image(thumbnailUrl);
+  const { gameUrl, isLoading: gameUrlLoading } = useB2Game(gameFileUrl);
   
   if (!game) {
     return (
