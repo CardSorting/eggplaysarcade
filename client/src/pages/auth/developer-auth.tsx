@@ -92,39 +92,41 @@ const DeveloperAuthPage = () => {
   };
 
   return (
-    <div className="container py-12 md:py-24">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-1" 
-              onClick={() => navigate('/auth')}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back
-            </Button>
+    <div className="container mx-auto py-8 md:py-16 px-4">
+      <div className="flex items-center gap-2 mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="gap-1" 
+          onClick={() => navigate('/auth')}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </Button>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8 justify-center">
+        {/* Left column - Form */}
+        <div className="w-full max-w-md mx-auto lg:mx-0 bg-card rounded-xl p-6 shadow-lg">
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Gamepad className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-center mb-2">Developer Account</h1>
+            <p className="text-muted-foreground text-center mb-4">
+              Publish your HTML5 games to our platform
+            </p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="flex flex-col items-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Gamepad className="h-8 w-8 text-primary" />
-              </div>
-              <h1 className="text-3xl font-bold text-center mb-2">Developer Account</h1>
-              <p className="text-muted-foreground text-center mb-4">
-                Publish your HTML5 games to our platform
-              </p>
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="register">Register</TabsTrigger>
-                <TabsTrigger value="login">Login</TabsTrigger>
-              </TabsList>
-            </div>
+            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+              <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsTrigger value="login">Login</TabsTrigger>
+            </TabsList>
 
-            <TabsContent value="register" className="space-y-4">
+            <TabsContent value="register" className="mt-0">
               <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-6">
                   {/* Personal Information */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Account Information</h3>
@@ -250,7 +252,7 @@ const DeveloperAuthPage = () => {
 
                   <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full mt-6" 
                     disabled={registerMutation.isPending}
                   >
                     {registerMutation.isPending ? 'Creating account...' : 'Create Developer Account'}
@@ -259,7 +261,7 @@ const DeveloperAuthPage = () => {
               </Form>
             </TabsContent>
 
-            <TabsContent value="login" className="space-y-4">
+            <TabsContent value="login" className="mt-0 space-y-4">
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                   <FormField
@@ -292,7 +294,7 @@ const DeveloperAuthPage = () => {
 
                   <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full mt-6" 
                     disabled={loginMutation.isPending}
                   >
                     {loginMutation.isPending ? 'Logging in...' : 'Log In'}
@@ -303,7 +305,8 @@ const DeveloperAuthPage = () => {
           </Tabs>
         </div>
 
-        <div className="hidden lg:block">
+        {/* Right column - Features */}
+        <div className="hidden lg:block lg:flex-1 max-w-xl">
           <Card className="bg-black text-white border-0 overflow-hidden h-full">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 opacity-70"></div>
             <CardContent className="relative z-10 flex flex-col justify-center h-full p-10">
