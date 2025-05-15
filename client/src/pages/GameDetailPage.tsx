@@ -42,8 +42,8 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 
 // Detail Hero section with cover image
 const GameHero = ({ game }: { game: any }) => {

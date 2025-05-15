@@ -21,8 +21,8 @@ import {
   Info,
   Calendar
 } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const GameDetail = () => {
   const params = useParams<{ id: string }>();

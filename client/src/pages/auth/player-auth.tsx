@@ -1,230 +1,319 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GameControllerIcon } from "@/lib/icons";
-import { UserRole } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import React from 'react';
+import { useLocation } from 'wouter';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { insertPlayerSchema } from '@shared/schema';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, ChevronLeft } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { UserRole } from '@shared/schema';
 
-/**
- * Player-specific authentication page
- */
+// Extended schema with validation rules
+const playerAuthSchema = insertPlayerSchema.extend({
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+// Relaxed schema for login
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type PlayerAuthValues = z.infer<typeof playerAuthSchema>;
+type LoginValues = z.infer<typeof loginSchema>;
+
 const PlayerAuthPage = () => {
+  const [activeTab, setActiveTab] = React.useState<string>('register');
   const { user, loginMutation, registerMutation } = useAuth();
   const [, navigate] = useLocation();
-  const { toast } = useToast();
 
-  // Form state
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [registerUsername, setRegisterUsername] = useState("");
-  const [registerPassword, setRegisterPassword] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [activeTab, setActiveTab] = useState("login");
-
-  // Redirect if already logged in
-  useEffect(() => {
+  // Redirect to home if already logged in
+  React.useEffect(() => {
     if (user) {
-      navigate("/");
+      navigate('/');
     }
   }, [user, navigate]);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!loginUsername || !loginPassword) {
-      toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Registration form
+  const registerForm = useForm<PlayerAuthValues>({
+    resolver: zodResolver(playerAuthSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+      confirmPassword: '',
+      email: '',
+      role: UserRole.PLAYER,
+      displayName: '',
+    },
+  });
 
-    loginMutation.mutate({
-      username: loginUsername,
-      password: loginPassword,
-    });
+  // Login form
+  const loginForm = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+  });
+
+  const onRegisterSubmit = (values: PlayerAuthValues) => {
+    const { confirmPassword, ...registerData } = values;
+    registerMutation.mutate(registerData);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!registerUsername || !registerPassword) {
-      toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    registerMutation.mutate({
-      username: registerUsername,
-      password: registerPassword,
-      email: registerEmail || undefined,
-      displayName: displayName || undefined,
-      role: UserRole.PLAYER,
-    });
+  const onLoginSubmit = (values: LoginValues) => {
+    loginMutation.mutate(values);
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* Auth Form Column */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex items-center mb-2">
-              <Button 
-                variant="ghost" 
-                className="p-0 mr-2"
-                onClick={() => navigate("/auth")}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <CardTitle className="text-2xl font-bold text-center flex-1">
-                Player Account
-              </CardTitle>
-            </div>
-            <CardDescription className="text-center">
-              Sign in to play and rate games
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
+    <div className="container py-12 md:py-24">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-1" 
+              onClick={() => navigate('/auth')}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold text-center mb-2">Player Account</h1>
+              <p className="text-muted-foreground text-center mb-4">
+                Play, rate, and discover amazing HTML5 games
+              </p>
+              <TabsList className="grid w-full max-w-md grid-cols-2">
                 <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="login">Login</TabsTrigger>
               </TabsList>
+            </div>
 
-              {/* Login Form */}
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-username">Username</Label>
-                    <Input
-                      id="login-username"
-                      placeholder="Enter your username"
-                      value={loginUsername}
-                      onChange={(e) => setLoginUsername(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loginMutation.isPending}
-                  >
-                    {loginMutation.isPending ? "Logging in..." : "Login"}
-                  </Button>
-                </form>
-              </TabsContent>
+            <TabsContent value="register" className="space-y-4">
+              <Form {...registerForm}>
+                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                  <FormField
+                    control={registerForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input placeholder="johndoe" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          This will be your public username.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Register Form */}
-              <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="register-username">Username</Label>
-                    <Input
-                      id="register-username"
-                      placeholder="Choose a username"
-                      value={registerUsername}
-                      onChange={(e) => setRegisterUsername(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="display-name">Display Name (Optional)</Label>
-                    <Input
-                      id="display-name"
-                      placeholder="How you'll appear to others"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email">Email (Optional)</Label>
-                    <Input
-                      id="register-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Password</Label>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="Create a secure password"
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full"
+                  <FormField
+                    control={registerForm.control}
+                    name="displayName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Display Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Your display name can be different from your username.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={registerForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="john@example.com" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          We'll never share your email with anyone else.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={registerForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={registerForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
                     disabled={registerMutation.isPending}
                   >
-                    {registerMutation.isPending ? "Creating account..." : "Create Player Account"}
+                    {registerMutation.isPending ? 'Creating account...' : 'Create Player Account'}
                   </Button>
                 </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-xs text-muted-foreground">
-              By signing in, you agree to our Terms of Service and Privacy Policy
-            </p>
-          </CardFooter>
-        </Card>
-      </div>
+              </Form>
+            </TabsContent>
 
-      {/* Hero Section Column */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-primary to-primary-foreground text-white flex-col justify-center items-center p-8">
-        <div className="max-w-md text-center">
-          <GameControllerIcon />
-          <h1 className="text-4xl font-bold mb-4">Join as a Player</h1>
-          <p className="text-lg mb-6">
-            Join our community of gaming enthusiasts. Discover new games,
-            create playlists, rate your favorites, and connect with other players.
-          </p>
-          <div className="grid grid-cols-2 gap-4 text-left">
-            <div className="bg-white/10 p-4 rounded-lg">
-              <h3 className="font-bold mb-2">Play Games</h3>
-              <p className="text-sm">Access hundreds of HTML5 games from our growing collection</p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-lg">
-              <h3 className="font-bold mb-2">Rate & Comment</h3>
-              <p className="text-sm">Share your thoughts and help others find the best games</p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-lg">
-              <h3 className="font-bold mb-2">Create Playlists</h3>
-              <p className="text-sm">Organize your favorite games and share them with friends</p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-lg">
-              <h3 className="font-bold mb-2">Track Progress</h3>
-              <p className="text-sm">Keep track of your achievements and game statistics</p>
-            </div>
-          </div>
+            <TabsContent value="login" className="space-y-4">
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                  <FormField
+                    control={loginForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input placeholder="johndoe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={loginForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={loginMutation.isPending}
+                  >
+                    {loginMutation.isPending ? 'Logging in...' : 'Log In'}
+                  </Button>
+                </form>
+              </Form>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <div className="hidden lg:block">
+          <Card className="bg-black text-white border-0 overflow-hidden h-full">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-70"></div>
+            <CardContent className="relative z-10 flex flex-col justify-center h-full p-10">
+              <div className="max-w-md mx-auto text-center space-y-6">
+                <h2 className="text-3xl font-bold">Discover Amazing Games</h2>
+                <p className="text-lg text-white/80">
+                  With a player account, you'll be able to:
+                </p>
+                <ul className="text-left space-y-4">
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Play Instantly</h3>
+                      <p className="text-white/70 text-sm">No downloads required. Play directly in your browser.</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Track Your Progress</h3>
+                      <p className="text-white/70 text-sm">Save your game progress and continue where you left off.</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Rate & Review</h3>
+                      <p className="text-white/70 text-sm">Share your opinions and help others find great games.</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Join the Community</h3>
+                      <p className="text-white/70 text-sm">Connect with other gamers who share your interests.</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

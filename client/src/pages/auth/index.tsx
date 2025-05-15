@@ -1,121 +1,247 @@
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { Layout } from '@/components/ui/layout';
-import { Gamepad2, Users, CodeXml } from "lucide-react";
+import { useLocation } from 'wouter';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Gamepad, Users, Award } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
-/**
- * AuthSelectionPage
- * 
- * This page allows users to choose between player and game developer registration/login.
- * It serves as an entry point to the appropriate authentication flow based on user type.
- */
-export default function AuthSelectionPage() {
-  const [, navigate] = useLocation();
+const AuthSelectionPage = () => {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
 
-  // Redirect to home if user is already logged in
+  // Redirect to home if already logged in
   React.useEffect(() => {
     if (user) {
-      navigate("/");
+      navigate('/');
     }
   }, [user, navigate]);
 
   return (
-    <Layout>
-      <div className="container max-w-6xl py-10">
-        <div className="flex flex-col items-center justify-center mb-10">
-          <h1 className="text-3xl font-bold tracking-tight">Join the Gaming Revolution</h1>
-          <p className="text-muted-foreground mt-2 text-center max-w-2xl">
-            Choose your path: Are you here to discover and play amazing games, or are you a developer ready to showcase your creations?
-          </p>
+    <div className="container py-12 md:py-24">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Join Game Portal</h1>
+            <p className="text-xl text-muted-foreground">
+              Choose how you want to be part of our gaming community
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-2 hover:border-primary hover:shadow-lg transition-all cursor-pointer">
+              <CardHeader className="space-y-1">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-2xl">Player Account</CardTitle>
+                <CardDescription>
+                  For gamers looking to play and discover new games
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center">
+                    <svg
+                      className="mr-2 h-4 w-4 text-primary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Play free HTML5 games
+                  </li>
+                  <li className="flex items-center">
+                    <svg
+                      className="mr-2 h-4 w-4 text-primary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Create wishlists and favorites
+                  </li>
+                  <li className="flex items-center">
+                    <svg
+                      className="mr-2 h-4 w-4 text-primary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Rate and review games
+                  </li>
+                  <li className="flex items-center">
+                    <svg
+                      className="mr-2 h-4 w-4 text-primary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Track gaming stats and achievements
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  onClick={() => navigate('/auth/player')}
+                >
+                  Sign Up as Player
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="border-2 hover:border-primary hover:shadow-lg transition-all cursor-pointer">
+              <CardHeader className="space-y-1">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
+                  <Gamepad className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-2xl">Developer Account</CardTitle>
+                <CardDescription>
+                  For game developers looking to publish their games
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center">
+                    <svg
+                      className="mr-2 h-4 w-4 text-primary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Publish HTML5 games to our platform
+                  </li>
+                  <li className="flex items-center">
+                    <svg
+                      className="mr-2 h-4 w-4 text-primary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Access comprehensive analytics
+                  </li>
+                  <li className="flex items-center">
+                    <svg
+                      className="mr-2 h-4 w-4 text-primary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Manage and update your game portfolio
+                  </li>
+                  <li className="flex items-center">
+                    <svg
+                      className="mr-2 h-4 w-4 text-primary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Receive player feedback and reviews
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  className="w-full"
+                  onClick={() => navigate('/auth/developer')}
+                >
+                  Sign Up as Developer
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          <div className="text-center md:text-left">
+            <p className="text-muted-foreground">
+              Already have an account?{" "}
+              <Button 
+                variant="link" 
+                className="p-0" 
+                onClick={() => navigate('/auth/player')}
+              >
+                Log in
+              </Button>
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Player Card */}
-          <Card className="border-2 hover:border-primary/80 transition-all">
-            <CardHeader className="text-center">
-              <div className="mx-auto bg-primary/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-2">
-                <Gamepad2 className="h-8 w-8 text-primary" />
+        <div className="hidden lg:flex flex-col justify-center">
+          <div className="bg-gradient-to-br from-primary/20 to-secondary/20 p-8 rounded-2xl">
+            <div className="flex justify-center mb-6">
+              <Award className="h-16 w-16 text-primary" />
+            </div>
+            <h2 className="text-3xl font-bold text-center mb-4">
+              Join the Ultimate Gaming Community
+            </h2>
+            <p className="text-lg text-center mb-6">
+              Game Portal connects players and developers in a vibrant gaming ecosystem.
+              Discover, play, and share amazing HTML5 games right in your browser.
+            </p>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-4 bg-background/50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">500+</div>
+                <div className="text-sm text-muted-foreground">Games</div>
               </div>
-              <CardTitle>Player</CardTitle>
-              <CardDescription>
-                Join as a player to discover and enjoy HTML5 games
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center justify-center">
-                  <span className="mr-2">✓</span> Discover trending games
-                </li>
-                <li className="flex items-center justify-center">
-                  <span className="mr-2">✓</span> Rate and review games
-                </li>
-                <li className="flex items-center justify-center">
-                  <span className="mr-2">✓</span> Create a personalized wishlist
-                </li>
-                <li className="flex items-center justify-center">
-                  <span className="mr-2">✓</span> Earn badges and achievements
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                onClick={() => navigate("/auth/player")}
-              >
-                Continue as Player
-              </Button>
-            </CardFooter>
-          </Card>
-
-          {/* Developer Card */}
-          <Card className="border-2 hover:border-primary/80 transition-all">
-            <CardHeader className="text-center">
-              <div className="mx-auto bg-primary/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-2">
-                <CodeXml className="h-8 w-8 text-primary" />
+              <div className="p-4 bg-background/50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">10K+</div>
+                <div className="text-sm text-muted-foreground">Active Players</div>
               </div>
-              <CardTitle>Game Developer</CardTitle>
-              <CardDescription>
-                Join as a developer to publish and showcase your games
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center justify-center">
-                  <span className="mr-2">✓</span> Upload and manage your games
-                </li>
-                <li className="flex items-center justify-center">
-                  <span className="mr-2">✓</span> Receive player feedback
-                </li>
-                <li className="flex items-center justify-center">
-                  <span className="mr-2">✓</span> Track game performance
-                </li>
-                <li className="flex items-center justify-center">
-                  <span className="mr-2">✓</span> Join the developer community
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                onClick={() => navigate("/auth/developer")}
-                variant="secondary"
-              >
-                Continue as Developer
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-
-        <div className="mt-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            By signing up, you agree to our Terms of Service and Privacy Policy.
-          </p>
+              <div className="p-4 bg-background/50 rounded-lg">
+                <div className="text-2xl font-bold text-primary">200+</div>
+                <div className="text-sm text-muted-foreground">Developers</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
-}
+};
+
+export default AuthSelectionPage;
