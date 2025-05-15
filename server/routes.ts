@@ -192,12 +192,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
       const search = req.query.search as string | undefined;
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
       
       let games;
       if (categoryId) {
         games = await storage.getGamesByCategory(categoryId);
       } else if (search) {
         games = await storage.searchGames(search);
+      } else if (userId) {
+        // Filter games by user ID (for developer dashboard)
+        games = await storage.getGamesByUserId(userId);
       } else {
         games = await storage.getGames();
       }

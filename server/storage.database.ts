@@ -60,6 +60,13 @@ export class DatabaseStorage implements IStorage {
       .from(games)
       .where(eq(games.categoryId, categoryId));
   }
+  
+  async getGamesByUserId(userId: number): Promise<Game[]> {
+    return await db
+      .select()
+      .from(games)
+      .where(eq(games.userId, userId));
+  }
 
   async getFeaturedGames(limit: number): Promise<Game[]> {
     return await db

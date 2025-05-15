@@ -21,6 +21,7 @@ export interface IStorage {
   getGames(): Promise<Game[]>;
   getGameById(id: number): Promise<Game | undefined>;
   getGamesByCategory(categoryId: number): Promise<Game[]>;
+  getGamesByUserId(userId: number): Promise<Game[]>;
   getFeaturedGames(limit: number): Promise<Game[]>;
   getPopularGames(limit: number): Promise<Game[]>;
   createGame(game: InsertGame): Promise<Game>;
@@ -133,6 +134,12 @@ export class MemStorage implements IStorage {
   async getGamesByCategory(categoryId: number): Promise<Game[]> {
     return Array.from(this.games.values()).filter(
       (game) => game.categoryId === categoryId
+    );
+  }
+  
+  async getGamesByUserId(userId: number): Promise<Game[]> {
+    return Array.from(this.games.values()).filter(
+      (game) => game.userId === userId
     );
   }
   
