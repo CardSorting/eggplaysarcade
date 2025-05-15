@@ -40,6 +40,18 @@ function Router() {
             requiredPermission="submit_games" 
           />
           <ProtectedRoute 
+            path="/dashboard/profile" 
+            component={Dashboard} 
+          />
+          <ProtectedRoute 
+            path="/dashboard/analytics" 
+            component={Dashboard} 
+          />
+          <ProtectedRoute 
+            path="/dashboard/mygames" 
+            component={Dashboard} 
+          />
+          <ProtectedRoute 
             path="/wishlist" 
             component={Wishlist} 
           />

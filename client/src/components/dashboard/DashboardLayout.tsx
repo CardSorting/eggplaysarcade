@@ -116,7 +116,7 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
         {
           label: "My Games",
           icon: <GamepadIcon className="h-5 w-5" />,
-          href: "/dashboard",
+          href: "/dashboard/mygames",
           key: "mygames"
         },
         {
@@ -128,13 +128,13 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
         {
           label: "Analytics",
           icon: <FileBarChart className="h-5 w-5" />,
-          href: "/dashboard",
+          href: "/dashboard/analytics",
           key: "analytics"
         },
         {
           label: "Profile",
           icon: <User className="h-5 w-5" />,
-          href: "/dashboard",
+          href: "/dashboard/profile",
           key: "profile"
         }
       ];
