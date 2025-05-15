@@ -1,6 +1,6 @@
 /**
- * Enum representing user roles in the application
- * These roles determine permissions and access rights
+ * Enum for user roles in the application
+ * Following the Domain-Driven Design approach with explicit role definitions
  */
 export enum UserRole {
   ADMIN = 'admin',

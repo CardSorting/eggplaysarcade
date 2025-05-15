@@ -1,71 +1,87 @@
 import { Request, Response, NextFunction } from "express";
 import { UserRole } from "../../domain/enums/UserRole";
-import { Permission } from "../../domain/valueObjects/Permission";
+import { Permission } from "../../domain/value-objects/Permission";
 import { RolePermissionService } from "../../application/services/RolePermissionService";
 
 /**
- * Middleware to ensure the user has the required permission
- * @param requiredPermission - The permission required to access the resource
+ * Middleware for role and permission-based authorization
+ * Following Clean Architecture principles for interface adapters
  */
-export function requirePermission(requiredPermission: Permission) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+export class AuthorizationMiddleware {
+  private rolePermissionService: RolePermissionService;
 
-    const user = req.user;
-    const rolePermissionService = new RolePermissionService();
-    
-    if (!rolePermissionService.hasPermission(user.role, requiredPermission)) {
-      return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
-    }
+  constructor(rolePermissionService: RolePermissionService) {
+    this.rolePermissionService = rolePermissionService;
+  }
 
-    next();
-  };
-}
+  /**
+   * Middleware to restrict access to specific roles
+   */
+  public restrictToRoles(allowedRoles: UserRole[]) {
+    return (req: Request, res: Response, next: NextFunction) => {
+      // Check if user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
 
-/**
- * Middleware to ensure the user has the required role
- * @param roles - The roles allowed to access the resource
- */
-export function requireRole(roles: UserRole[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+      // Check if user has one of the allowed roles
+      const userRole = req.user?.role as UserRole;
+      
+      if (!userRole || !allowedRoles.includes(userRole)) {
+        return res.status(403).json({ 
+          message: 'Access denied: insufficient permissions' 
+        });
+      }
 
-    const user = req.user;
-    
-    if (!roles.includes(user.role as UserRole)) {
-      return res.status(403).json({ message: "Forbidden: Insufficient role" });
-    }
+      next();
+    };
+  }
 
-    next();
-  };
-}
+  /**
+   * Middleware to restrict access based on permissions
+   */
+  public requirePermission(requiredPermission: string) {
+    return (req: Request, res: Response, next: NextFunction) => {
+      // Check if user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
 
-/**
- * Middleware to ensure a user can only access their own resources
- * @param paramIdField - The request parameter containing the resource owner ID
- */
-export function requireOwnership(paramIdField: string = 'userId') {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+      // Check if user role has the required permission
+      const userRole = req.user?.role as UserRole;
+      
+      if (!userRole || !this.rolePermissionService.roleHasPermission(userRole, requiredPermission)) {
+        return res.status(403).json({ 
+          message: `Access denied: missing required permission: ${requiredPermission}` 
+        });
+      }
 
-    const resourceUserId = parseInt(req.params[paramIdField]);
-    const user = req.user;
-    
-    // Admin can access any user's resources
-    if (user.role === UserRole.ADMIN) {
-      return next();
-    }
-    
-    if (user.id !== resourceUserId) {
-      return res.status(403).json({ message: "Forbidden: You do not have permission to access this resource" });
-    }
+      next();
+    };
+  }
 
-    next();
-  };
+  /**
+   * Middleware to restrict access to resource owners or admins
+   */
+  public restrictToOwnerOrAdmin(getUserIdFromParams: (req: Request) => number) {
+    return (req: Request, res: Response, next: NextFunction) => {
+      // Check if user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const userId = req.user?.id;
+      const resourceOwnerId = getUserIdFromParams(req);
+      const userRole = req.user?.role as UserRole;
+
+      // Allow access if user is admin or the resource owner
+      if (userRole === UserRole.ADMIN || userId === resourceOwnerId) {
+        next();
+      } else {
+        return res.status(403).json({ 
+          message: 'Access denied: you can only access your own resources' 
+        });
+      }
+    };
+  }
 }

@@ -1,13 +1,16 @@
 import { UserRole } from "../../domain/enums/UserRole";
-import { Permission } from "../../domain/valueObjects/Permission";
+import { Permission } from "../../domain/value-objects/Permission";
 
 /**
  * Service for managing role-based permissions
- * This follows the Domain Service pattern from Domain-Driven Design
+ * Following the Service pattern from Domain-Driven Design
  */
 export class RolePermissionService {
-  // Map of role to permissions
-  private readonly rolePermissionsMap: Record<UserRole, Permission[]> = {
+  /**
+   * Mapping of permissions to roles
+   * This defines which permissions are granted to each role
+   */
+  private static readonly rolePermissionsMap: Record<UserRole, string[]> = {
     [UserRole.ADMIN]: [
       'manage_users',
       'manage_games',
@@ -17,7 +20,13 @@ export class RolePermissionService {
       'configure_system',
       'play_games',
       'rate_games',
+      'manage_playlists',
+      'submit_games',
+      'manage_own_games',
+      'view_own_analytics',
+      'edit_own_profile'
     ],
+    
     [UserRole.GAME_DEVELOPER]: [
       'manage_own_games',
       'view_own_analytics',
@@ -25,36 +34,51 @@ export class RolePermissionService {
       'submit_games',
       'play_games',
       'rate_games',
+      'manage_playlists'
     ],
+    
     [UserRole.PLAYER]: [
       'play_games',
       'rate_games',
-      'edit_own_profile',
       'manage_playlists',
-    ],
+      'edit_own_profile'
+    ]
   };
-
+  
   /**
-   * Check if a role has a specific permission
-   * @param role The user role
-   * @param permission The permission to check
-   * @returns true if the role has the permission, false otherwise
-   */
-  public hasPermission(role: UserRole, permission: Permission): boolean {
-    if (!role || !permission) return false;
-    
-    const permissions = this.rolePermissionsMap[role];
-    if (!permissions) return false;
-    
-    return permissions.includes(permission);
-  }
-
-  /**
-   * Get all permissions for a role
-   * @param role The user role
-   * @returns Array of permissions for the role
+   * Get all permissions for a given role
    */
   public getPermissionsForRole(role: UserRole): Permission[] {
-    return this.rolePermissionsMap[role] || [];
+    const permissionStrings = RolePermissionService.rolePermissionsMap[role] || [];
+    return permissionStrings.map(p => new Permission(p));
+  }
+  
+  /**
+   * Check if a role has a specific permission
+   */
+  public roleHasPermission(role: UserRole, permission: string): boolean {
+    const permissionStrings = RolePermissionService.rolePermissionsMap[role] || [];
+    return permissionStrings.includes(permission);
+  }
+  
+  /**
+   * Get all the permissions that exist in the system
+   */
+  public getAllPermissions(): Permission[] {
+    return Permission.ALL_PERMISSIONS.map(p => new Permission(p));
+  }
+  
+  /**
+   * Get all available roles in the system
+   */
+  public getAllRoles(): UserRole[] {
+    return Object.values(UserRole);
+  }
+  
+  /**
+   * Check if a permission is valid
+   */
+  public isValidPermission(permission: string): boolean {
+    return Permission.isValid(permission);
   }
 }
