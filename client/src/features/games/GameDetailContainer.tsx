@@ -8,8 +8,6 @@ import { useParams } from "wouter";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useB2Game } from "@/hooks/use-b2-file";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 
 // Domain layer
 import { Game, Review } from "./types";
@@ -143,8 +141,6 @@ export function GameDetailContainer() {
   // Render the view with separated components
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      
       <GameHeader 
         game={game}
         inWishlist={inWishlist}
@@ -174,7 +170,7 @@ export function GameDetailContainer() {
         </div>
       </div>
       
-      <Footer />
+      {/* No Footer here as it's already included in App.tsx */}
     </div>
   );
 }
