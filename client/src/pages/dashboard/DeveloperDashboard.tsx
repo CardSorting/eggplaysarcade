@@ -19,11 +19,17 @@ import {
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 
+interface DeveloperGame extends Game {
+  publishedAt: Date;
+  players: number;
+  rating: number;
+}
+
 export default function DeveloperDashboard() {
   const { user } = useAuth();
   
   // Fetch games created by the current developer
-  const { data: myGames = [], isLoading } = useQuery({
+  const { data: myGames = [], isLoading } = useQuery<DeveloperGame[]>({
     queryKey: ['/api/games/developer', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/games?userId=${user?.id}`);
@@ -31,9 +37,9 @@ export default function DeveloperDashboard() {
         throw new Error('Failed to fetch developer games');
       }
       const games = await response.json();
-      return games.map((game: any) => ({
+      return games.map((game: Game) => ({
         ...game,
-        publishedAt: new Date(game.publishedAt),
+        publishedAt: new Date(game.publishedAt || new Date()),
         // Ensure players and rating are not null for calculations
         players: game.players || 0,
         rating: game.rating || 0
@@ -140,7 +146,7 @@ export default function DeveloperDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {myGames.map(game => (
+                        {myGames.map((game: DeveloperGame) => (
                           <div key={game.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg">
                             <div className="flex-1 space-y-1 mb-4 md:mb-0">
                               <div className="flex items-center">

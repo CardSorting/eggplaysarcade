@@ -104,7 +104,7 @@ export const DashboardLayout = ({ children, activeTab }: DashboardLayoutProps) =
         {
           label: "My Games",
           icon: <GamepadIcon className="h-5 w-5" />,
-          href: "/dashboard/mygames",
+          href: "/dashboard",
         },
         {
           label: "Submit Game",
