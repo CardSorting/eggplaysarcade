@@ -1,89 +1,102 @@
 import { EntityId } from "../value-objects/EntityId";
 
 /**
- * Rating entity represents a user's rating of a game in the domain.
- * Following the Entity pattern from Domain-Driven Design.
+ * Rating entity representing a user rating for a game
+ * Following the Domain-Driven Design principles
  */
 export class Rating {
   private _id: EntityId | null;
-  private _gameId: EntityId;
   private _userId: EntityId;
-  private _stars: number;
-  private _comment: string | null;
+  private _gameId: EntityId;
+  private _value: number;
   private _createdAt: Date;
 
-  constructor(
+  private constructor(
     id: EntityId | null,
-    gameId: EntityId,
     userId: EntityId,
-    stars: number,
-    comment: string | null = null,
-    createdAt: Date = new Date()
+    gameId: EntityId,
+    value: number,
+    createdAt: Date
   ) {
-    this.validateStars(stars);
+    if (value < 1 || value > 5) {
+      throw new Error("Rating value must be between 1 and 5");
+    }
     
     this._id = id;
-    this._gameId = gameId;
     this._userId = userId;
-    this._stars = stars;
-    this._comment = comment;
+    this._gameId = gameId;
+    this._value = value;
     this._createdAt = createdAt;
   }
 
-  // Getters
-  get id(): EntityId | null {
+  /**
+   * Create a new rating
+   */
+  public static create(userId: EntityId, gameId: EntityId, value: number): Rating {
+    return new Rating(null, userId, gameId, value, new Date());
+  }
+
+  /**
+   * Reconstruct a rating from persistence
+   */
+  public static reconstitute(
+    id: number,
+    userId: number,
+    gameId: number,
+    value: number,
+    createdAt: Date
+  ): Rating {
+    return new Rating(
+      new EntityId(id),
+      new EntityId(userId),
+      new EntityId(gameId),
+      value,
+      createdAt
+    );
+  }
+
+  /**
+   * Get the ID of this rating
+   */
+  public get id(): EntityId | null {
     return this._id;
   }
 
-  get gameId(): EntityId {
-    return this._gameId;
-  }
-
-  get userId(): EntityId {
+  /**
+   * Get the user ID for this rating
+   */
+  public get userId(): EntityId {
     return this._userId;
   }
 
-  get stars(): number {
-    return this._stars;
+  /**
+   * Get the game ID for this rating
+   */
+  public get gameId(): EntityId {
+    return this._gameId;
   }
 
-  get comment(): string | null {
-    return this._comment;
+  /**
+   * Get the value of this rating
+   */
+  public get value(): number {
+    return this._value;
   }
 
-  get createdAt(): Date {
-    return new Date(this._createdAt);
+  /**
+   * Get the creation date of this rating
+   */
+  public get createdAt(): Date {
+    return this._createdAt;
   }
 
-  // Business methods
-  updateRating(stars: number, comment: string | null): void {
-    this.validateStars(stars);
-    
-    this._stars = stars;
-    this._comment = comment;
-  }
-
-  // Domain rules validation
-  private validateStars(stars: number): void {
-    if (stars < 1 || stars > 5) {
-      throw new Error('Rating stars must be between 1 and 5');
+  /**
+   * Update the value of this rating
+   */
+  public updateValue(value: number): void {
+    if (value < 1 || value > 5) {
+      throw new Error("Rating value must be between 1 and 5");
     }
-  }
-
-  // Factory method for creating a new rating
-  static create(
-    gameId: EntityId,
-    userId: EntityId,
-    stars: number,
-    comment: string | null = null
-  ): Rating {
-    return new Rating(
-      null, // ID will be assigned by the repository
-      gameId,
-      userId,
-      stars,
-      comment,
-      new Date()
-    );
+    this._value = value;
   }
 }

@@ -10,6 +10,7 @@ import { MemRatingRepository } from "../persistence/MemRatingRepository";
 
 // Import database repositories
 import { DbGameRepository } from "../persistence/DbGameRepository";
+import { DbCategoryRepository } from "../persistence/DbCategoryRepository";
 
 import { GameController } from "../../interfaces/api/controllers/GameController";
 import { CategoryController } from "../../interfaces/api/controllers/CategoryController";
@@ -42,11 +43,23 @@ export class DiContainer {
    * Register all services
    */
   private registerServices(): void {
-    // Register repositories
-    this.registerSingleton<GameRepository>("GameRepository", new MemGameRepository());
-    this.registerSingleton<CategoryRepository>("CategoryRepository", new MemCategoryRepository());
-    this.registerSingleton<UserRepository>("UserRepository", new MemUserRepository());
-    this.registerSingleton<RatingRepository>("RatingRepository", new MemRatingRepository());
+    // Register repositories based on environment
+    if (process.env.DATABASE_URL) {
+      // Use database repositories if DATABASE_URL is available
+      console.log("Using database repositories for persistence");
+      this.registerSingleton<GameRepository>("GameRepository", new DbGameRepository());
+      this.registerSingleton<CategoryRepository>("CategoryRepository", new DbCategoryRepository());
+      // TODO: Replace with DB implementations as they are created
+      this.registerSingleton<UserRepository>("UserRepository", new MemUserRepository());
+      this.registerSingleton<RatingRepository>("RatingRepository", new MemRatingRepository());
+    } else {
+      // Fallback to memory repositories
+      console.log("Using in-memory repositories for persistence");
+      this.registerSingleton<GameRepository>("GameRepository", new MemGameRepository());
+      this.registerSingleton<CategoryRepository>("CategoryRepository", new MemCategoryRepository());
+      this.registerSingleton<UserRepository>("UserRepository", new MemUserRepository());
+      this.registerSingleton<RatingRepository>("RatingRepository", new MemRatingRepository());
+    }
 
     // Register controllers
     this.registerSingleton<GameController>("GameController", new GameController(

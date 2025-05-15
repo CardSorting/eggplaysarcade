@@ -12,19 +12,19 @@ export interface CategoryRepository {
   findAll(): Promise<Category[]>;
   
   /**
-   * Find a category by ID
+   * Find a category by its ID
    */
   findById(id: EntityId): Promise<Category | null>;
   
   /**
-   * Save a category
+   * Find a category by its name
    */
-  save(category: Category): Promise<Category>;
+  findByName(name: string): Promise<Category | null>;
   
   /**
-   * Update a category
+   * Save a category (create or update)
    */
-  update(category: Category): Promise<Category>;
+  save(category: Category): Promise<Category>;
   
   /**
    * Delete a category

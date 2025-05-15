@@ -1,142 +1,132 @@
 import { EntityId } from "../value-objects/EntityId";
-import { Game } from "./Game";
-import { Rating } from "./Rating";
 
 /**
- * User entity represents a user in the domain.
- * Following the Entity pattern from Domain-Driven Design.
+ * User entity representing a user in the domain
+ * Following the Domain-Driven Design principles
  */
 export class User {
   private _id: EntityId | null;
   private _username: string;
-  private _email: string;
   private _passwordHash: string;
-  private _avatarUrl: string | null;
-  private _bio: string | null;
-  private _games: Game[];
-  private _ratings: Rating[];
+  private _email: string | null;
+  private _createdAt: Date;
+  private _isAdmin: boolean;
 
-  constructor(
+  private constructor(
     id: EntityId | null,
     username: string,
-    email: string,
     passwordHash: string,
-    avatarUrl: string | null = null,
-    bio: string | null = null,
-    games: Game[] = [],
-    ratings: Rating[] = []
+    email: string | null,
+    createdAt: Date,
+    isAdmin: boolean = false
   ) {
     this._id = id;
     this._username = username;
-    this._email = email;
     this._passwordHash = passwordHash;
-    this._avatarUrl = avatarUrl;
-    this._bio = bio;
-    this._games = games;
-    this._ratings = ratings;
+    this._email = email;
+    this._createdAt = createdAt;
+    this._isAdmin = isAdmin;
   }
 
-  // Getters
-  get id(): EntityId | null {
+  /**
+   * Create a new user
+   */
+  public static create(
+    username: string,
+    passwordHash: string,
+    email: string | null = null
+  ): User {
+    return new User(
+      null,
+      username,
+      passwordHash,
+      email,
+      new Date(),
+      false
+    );
+  }
+
+  /**
+   * Reconstruct a user from persistence
+   */
+  public static reconstitute(
+    id: number,
+    username: string,
+    passwordHash: string,
+    email: string | null,
+    createdAt: Date,
+    isAdmin: boolean = false
+  ): User {
+    return new User(
+      new EntityId(id),
+      username,
+      passwordHash,
+      email,
+      createdAt,
+      isAdmin
+    );
+  }
+
+  /**
+   * Get the ID of this user
+   */
+  public get id(): EntityId | null {
     return this._id;
   }
 
-  get username(): string {
+  /**
+   * Get the username of this user
+   */
+  public get username(): string {
     return this._username;
   }
 
-  get email(): string {
-    return this._email;
-  }
-
-  get passwordHash(): string {
+  /**
+   * Get the password hash of this user
+   */
+  public get passwordHash(): string {
     return this._passwordHash;
   }
 
-  get avatarUrl(): string | null {
-    return this._avatarUrl;
+  /**
+   * Get the email of this user
+   */
+  public get email(): string | null {
+    return this._email;
   }
 
-  get bio(): string | null {
-    return this._bio;
+  /**
+   * Get the creation date of this user
+   */
+  public get createdAt(): Date {
+    return this._createdAt;
   }
 
-  get games(): Game[] {
-    return [...this._games];
+  /**
+   * Check if this user is an admin
+   */
+  public get isAdmin(): boolean {
+    return this._isAdmin;
   }
 
-  get ratings(): Rating[] {
-    return [...this._ratings];
+  /**
+   * Set user as admin
+   */
+  public setAdmin(isAdmin: boolean): void {
+    this._isAdmin = isAdmin;
   }
 
-  // Business methods
-  updateProfile(username: string, email: string, bio: string | null): void {
-    this._username = username;
+  /**
+   * Update user's email
+   */
+  public updateEmail(email: string | null): void {
     this._email = email;
-    this._bio = bio;
   }
 
-  updateAvatar(avatarUrl: string): void {
-    this._avatarUrl = avatarUrl;
-  }
-
-  addGame(game: Game): void {
-    if (!this._games.some(g => g.id && g.id.equals(game.id!))) {
-      this._games.push(game);
-    }
-  }
-
-  removeGame(gameId: EntityId): void {
-    this._games = this._games.filter(
-      game => game.id && !game.id.equals(gameId)
-    );
-  }
-
-  addRating(rating: Rating): void {
-    const existingRatingIndex = this._ratings.findIndex(
-      r => r.gameId.equals(rating.gameId)
-    );
-
-    if (existingRatingIndex >= 0) {
-      this._ratings[existingRatingIndex] = rating;
-    } else {
-      this._ratings.push(rating);
-    }
-  }
-
-  removeRating(gameId: EntityId): void {
-    this._ratings = this._ratings.filter(
-      rating => !rating.gameId.equals(gameId)
-    );
-  }
-
-  // Domain rules validation
-  private validateUsername(username: string): boolean {
-    return username.length >= 3 && username.length <= 30;
-  }
-
-  private validateEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  // Factory method for creating a new user
-  static create(
-    username: string,
-    email: string,
-    passwordHash: string,
-    avatarUrl: string | null = null,
-    bio: string | null = null
-  ): User {
-    return new User(
-      null, // ID will be assigned by the repository
-      username,
-      email,
-      passwordHash,
-      avatarUrl,
-      bio,
-      [],
-      []
-    );
+  /**
+   * Update user's password
+   */
+  public updatePassword(passwordHash: string): void {
+    this._passwordHash = passwordHash;
   }
 }

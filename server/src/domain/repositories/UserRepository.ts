@@ -1,5 +1,5 @@
-import { User } from "../entities/User";
 import { EntityId } from "../value-objects/EntityId";
+import { User } from "../entities/User";
 
 /**
  * Repository interface for User entities
@@ -22,14 +22,9 @@ export interface UserRepository {
   findByUsername(username: string): Promise<User | null>;
   
   /**
-   * Save a user
+   * Save a user (create or update)
    */
   save(user: User): Promise<User>;
-  
-  /**
-   * Update a user
-   */
-  update(user: User): Promise<User>;
   
   /**
    * Delete a user

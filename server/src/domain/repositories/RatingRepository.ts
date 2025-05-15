@@ -1,5 +1,5 @@
-import { Rating } from "../entities/Rating";
 import { EntityId } from "../value-objects/EntityId";
+import { Rating } from "../entities/Rating";
 
 /**
  * Repository interface for Rating entities
@@ -27,19 +27,19 @@ export interface RatingRepository {
   findByUserId(userId: EntityId): Promise<Rating[]>;
   
   /**
-   * Find a rating by game ID and user ID
+   * Find a specific rating by game ID and user ID
    */
   findByGameAndUser(gameId: EntityId, userId: EntityId): Promise<Rating | null>;
   
   /**
-   * Save a rating
+   * Create a new rating
    */
-  save(rating: Rating): Promise<Rating>;
+  createRating(userId: EntityId, gameId: EntityId, value: number): Promise<Rating>;
   
   /**
-   * Update a rating
+   * Save a rating (create or update)
    */
-  update(rating: Rating): Promise<Rating>;
+  save(rating: Rating): Promise<Rating>;
   
   /**
    * Delete a rating
