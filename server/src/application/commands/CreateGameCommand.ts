@@ -1,61 +1,70 @@
-import { GameRepository } from '../../domain/repositories/GameRepository';
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
-import { UserRepository } from '../../domain/repositories/UserRepository';
-import { Game } from '../../domain/entities/Game';
-import { EntityId } from '../../domain/value-objects/EntityId';
-
-export interface CreateGameCommandParams {
-  title: string;
-  description: string;
-  instructions: string;
-  thumbnailUrl: string;
-  gameUrl: string;
-  categoryId: number;
-  userId: number;
-  tags?: string[];
-}
+import { Game } from "../../domain/entities/Game";
+import { EntityId } from "../../domain/value-objects/EntityId";
+import { GameRepository } from "../../domain/repositories/GameRepository";
+import { CategoryRepository } from "../../domain/repositories/CategoryRepository";
+import { UserRepository } from "../../domain/repositories/UserRepository";
+import { GameDTO } from "../dto/GameDTO";
 
 /**
  * Command for creating a new game
- * This follows the Command pattern from CQRS
+ * Following the Command pattern from CQRS
  */
 export class CreateGameCommand {
-  constructor(
-    private readonly gameRepository: GameRepository,
-    private readonly categoryRepository: CategoryRepository,
-    private readonly userRepository: UserRepository
-  ) {}
+  private readonly gameRepository: GameRepository;
+  private readonly categoryRepository: CategoryRepository;
+  private readonly userRepository: UserRepository;
 
-  async execute(params: CreateGameCommandParams): Promise<Game> {
-    // Validate that category exists
-    const categoryId = new EntityId(params.categoryId);
-    const category = await this.categoryRepository.findById(categoryId);
-    
+  constructor(
+    gameRepository: GameRepository,
+    categoryRepository: CategoryRepository,
+    userRepository: UserRepository
+  ) {
+    this.gameRepository = gameRepository;
+    this.categoryRepository = categoryRepository;
+    this.userRepository = userRepository;
+  }
+
+  /**
+   * Execute the command to create a new game
+   */
+  async execute(
+    title: string,
+    description: string,
+    instructions: string,
+    thumbnailUrl: string,
+    gameUrl: string,
+    categoryId: number,
+    userId: number,
+    tags: string[] = []
+  ): Promise<GameDTO> {
+    // Validate that the category exists
+    const category = await this.categoryRepository.findById(new EntityId(categoryId));
     if (!category) {
-      throw new Error(`Category with ID ${params.categoryId} not found`);
+      throw new Error(`Category with ID ${categoryId} not found`);
     }
-    
-    // Validate that user exists
-    const userId = new EntityId(params.userId);
-    const user = await this.userRepository.findById(userId);
-    
+
+    // Validate that the user exists
+    const user = await this.userRepository.findById(new EntityId(userId));
     if (!user) {
-      throw new Error(`User with ID ${params.userId} not found`);
+      throw new Error(`User with ID ${userId} not found`);
     }
-    
-    // Create new game entity
+
+    // Create a new game entity
     const game = Game.create(
-      params.title,
-      params.description,
-      params.instructions,
-      params.thumbnailUrl,
-      params.gameUrl,
-      categoryId,
-      userId,
-      params.tags || []
+      title,
+      description,
+      instructions,
+      thumbnailUrl,
+      gameUrl,
+      new EntityId(categoryId),
+      new EntityId(userId),
+      tags
     );
-    
-    // Save to repository
-    return await this.gameRepository.save(game);
+
+    // Save the game entity
+    const savedGame = await this.gameRepository.save(game);
+
+    // Return the result as DTO
+    return GameDTO.fromEntityWithRelations(savedGame, category, user);
   }
 }

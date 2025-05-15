@@ -1,43 +1,42 @@
-import { GameRepository } from '../../domain/repositories/GameRepository';
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
-import { Game } from '../../domain/entities/Game';
-import { EntityId } from '../../domain/value-objects/EntityId';
-
-export interface GetGamesQueryParams {
-  categoryId?: number;
-  searchTerm?: string;
-}
+import { GameRepository } from "../../domain/repositories/GameRepository";
+import { CategoryRepository } from "../../domain/repositories/CategoryRepository";
+import { GameDTO } from "../dto/GameDTO";
 
 /**
- * Query for retrieving games with optional filtering
- * This follows the Query pattern from CQRS
+ * Query for retrieving all games
+ * Following the Query pattern from CQRS
  */
 export class GetGamesQuery {
-  constructor(
-    private readonly gameRepository: GameRepository,
-    private readonly categoryRepository: CategoryRepository
-  ) {}
+  private readonly gameRepository: GameRepository;
+  private readonly categoryRepository: CategoryRepository;
 
-  async execute(params?: GetGamesQueryParams): Promise<Game[]> {
-    let games: Game[];
+  constructor(
+    gameRepository: GameRepository,
+    categoryRepository: CategoryRepository
+  ) {
+    this.gameRepository = gameRepository;
+    this.categoryRepository = categoryRepository;
+  }
+
+  /**
+   * Execute the query to get all games
+   */
+  async execute(): Promise<GameDTO[]> {
+    // Get all games from the repository
+    const games = await this.gameRepository.findAll();
     
-    if (params?.categoryId) {
-      const categoryId = new EntityId(params.categoryId);
-      games = await this.gameRepository.findByCategory(categoryId);
-    } else if (params?.searchTerm) {
-      games = await this.gameRepository.search(params.searchTerm);
-    } else {
-      games = await this.gameRepository.findAll();
-    }
+    // For each game, get its category
+    const result: GameDTO[] = [];
     
-    // Enrich games with their category information
     for (const game of games) {
-      const category = await this.categoryRepository.findById(game.categoryId);
-      if (category) {
-        game.setCategory(category);
-      }
+      const category = game.categoryId 
+        ? await this.categoryRepository.findById(game.categoryId)
+        : null;
+        
+      const dto = GameDTO.fromEntityWithRelations(game, category || undefined);
+      result.push(dto);
     }
     
-    return games;
+    return result;
   }
 }
