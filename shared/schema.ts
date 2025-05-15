@@ -6,6 +6,10 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").default("player").notNull(),
+  email: text("email"),
+  avatarUrl: text("avatar_url"),
+  bio: text("bio"),
 });
 
 export const categories = pgTable("categories", {
