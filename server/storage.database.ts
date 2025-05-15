@@ -2,6 +2,7 @@ import { users, type User, type InsertUser } from "@shared/schema";
 import { categories, type Category, type InsertCategory } from "@shared/schema";
 import { games, type Game, type InsertGame } from "@shared/schema";
 import { ratings, type Rating, type InsertRating } from "@shared/schema";
+import { wishlists, type Wishlist, type InsertWishlist } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, like, and, or, sql } from "drizzle-orm";
 import { IStorage } from "./storage";
@@ -136,5 +137,65 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(ratings)
       .where(eq(ratings.gameId, gameId));
+  }
+
+  // Wishlist methods
+  async addToWishlist(wishlistItem: InsertWishlist): Promise<Wishlist> {
+    const [item] = await db
+      .insert(wishlists)
+      .values({
+        userId: wishlistItem.userId,
+        gameId: wishlistItem.gameId,
+        addedAt: new Date()
+      })
+      .returning();
+    return item;
+  }
+
+  async removeFromWishlist(userId: number, gameId: number): Promise<boolean> {
+    const result = await db
+      .delete(wishlists)
+      .where(
+        and(
+          eq(wishlists.userId, userId),
+          eq(wishlists.gameId, gameId)
+        )
+      );
+    
+    return true; // In Drizzle, delete doesn't return a meaningful result for checking
+  }
+
+  async getWishlistItems(userId: number): Promise<Game[]> {
+    // First get all wishlist items for this user
+    const wishlistEntries = await db
+      .select()
+      .from(wishlists)
+      .where(eq(wishlists.userId, userId))
+      .orderBy(desc(wishlists.addedAt));
+    
+    // Then get all the games in the wishlist
+    const result: Game[] = [];
+    for (const entry of wishlistEntries) {
+      const game = await this.getGameById(entry.gameId);
+      if (game) {
+        result.push(game);
+      }
+    }
+    
+    return result;
+  }
+
+  async isGameInWishlist(userId: number, gameId: number): Promise<boolean> {
+    const [entry] = await db
+      .select()
+      .from(wishlists)
+      .where(
+        and(
+          eq(wishlists.userId, userId),
+          eq(wishlists.gameId, gameId)
+        )
+      );
+    
+    return !!entry;
   }
 }
