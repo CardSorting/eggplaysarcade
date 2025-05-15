@@ -8,7 +8,7 @@ export abstract class UserEntity implements Omit<User, 'id'> {
   public username: string;
   public password: string;
   public email: string | null;
-  public role: UserRole;
+  public role: "admin" | "game_developer" | "player";
   public displayName: string | null;
   public avatarUrl: string | null;
   public bio: string | null;
@@ -22,7 +22,7 @@ export abstract class UserEntity implements Omit<User, 'id'> {
     this.username = data.username!;
     this.password = data.password!;
     this.email = data.email || null;
-    this.role = data.role!;
+    this.role = data.role || UserRole.PLAYER;
     this.displayName = data.displayName || null;
     this.avatarUrl = data.avatarUrl || null;
     this.bio = data.bio || null;

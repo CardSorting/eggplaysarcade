@@ -69,13 +69,47 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Import the new domain-driven auth routes will be done dynamically
-  // Using dynamic import for the auth routes
+  // Import the new domain-driven auth routes
   import('./src/interfaces/routes/authRoutes').then(module => {
     // Register the advanced auth routes under /api/auth prefix
     const setupAuthRoutes = module.setupAuthRoutes;
     app.use('/api/auth', setupAuthRoutes());
+    console.log('Domain-driven auth routes loaded successfully');
   }).catch(err => {
-    console.error('Failed to load auth routes:', err);
+    console.error('Failed to load domain-driven auth routes:', err);
+  });
+  
+  // Keep legacy routes for backward compatibility
+  app.post("/api/register", async (req, res, next) => {
+    const existingUser = await storage.getUserByUsername(req.body.username);
+    if (existingUser) {
+      return res.status(400).send("Username already exists");
+    }
+
+    const user = await storage.createUser({
+      ...req.body,
+      password: await hashPassword(req.body.password),
+    });
+
+    req.login(user, (err) => {
+      if (err) return next(err);
+      res.status(201).json(user);
+    });
+  });
+
+  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+    res.status(200).json(req.user);
+  });
+
+  app.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.sendStatus(200);
+    });
+  });
+
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    res.json(req.user);
   });
 }

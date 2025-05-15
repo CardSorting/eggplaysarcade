@@ -75,6 +75,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   bio: true,
   displayName: true,
   isVerified: true,
+}).extend({
+  companyName: z.string().nullable().optional(),
+  portfolio: z.string().nullable().optional(),
+  createdAt: z.date().optional(),
+  lastLogin: z.date().nullable().optional()
 });
 
 // Specialized insert schemas for specific user types
@@ -84,8 +89,8 @@ export const insertPlayerSchema = insertUserSchema.extend({
 
 export const insertDeveloperSchema = insertUserSchema.extend({
   role: z.literal(UserRole.GAME_DEVELOPER),
-  companyName: z.string().optional(),
-  portfolio: z.string().url().optional(),
+  companyName: z.string().nullable().optional(),
+  portfolio: z.string().nullable().optional(),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).pick({
