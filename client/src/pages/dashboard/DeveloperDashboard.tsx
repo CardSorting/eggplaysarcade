@@ -22,36 +22,22 @@ import { Badge } from "@/components/ui/badge";
 export default function DeveloperDashboard() {
   const { user } = useAuth();
   
-  // Mock data for developer's games - would be replaced with a real query
-  const myGames = [
-    {
-      id: 1,
-      title: "Space Adventure",
-      description: "An exciting space exploration game",
-      players: 1205,
-      rating: 4.5,
-      publishedAt: new Date("2023-12-15"),
-      thumbnailUrl: "/images/game1.jpg"
+  // Fetch games created by the current developer
+  const { data: myGames = [], isLoading } = useQuery({
+    queryKey: ['/api/games/developer'],
+    queryFn: async () => {
+      const response = await fetch('/api/games?userId=' + user?.id);
+      if (!response.ok) {
+        throw new Error('Failed to fetch developer games');
+      }
+      const games = await response.json();
+      return games.map((game: any) => ({
+        ...game,
+        publishedAt: new Date(game.publishedAt)
+      }));
     },
-    {
-      id: 2,
-      title: "Puzzle Master",
-      description: "Challenge your brain with these mind-bending puzzles",
-      players: 3250,
-      rating: 4.2,
-      publishedAt: new Date("2024-02-10"),
-      thumbnailUrl: "/images/game2.jpg"
-    },
-    {
-      id: 3,
-      title: "Racing Legends",
-      description: "Race against the best drivers in high-speed competitions",
-      players: 2750,
-      rating: 4.7,
-      publishedAt: new Date("2024-04-05"),
-      thumbnailUrl: "/images/game3.jpg"
-    }
-  ];
+    enabled: !!user?.id
+  });
   
   return (
     <DashboardLayout activeTab="dashboard">
@@ -76,92 +62,123 @@ export default function DeveloperDashboard() {
           </TabsList>
           
           <TabsContent value="mygames" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Games
-                  </CardTitle>
-                  <GamepadIcon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{myGames.length}</div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Players
-                  </CardTitle>
-                  <Eye className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {myGames.reduce((sum, game) => sum + (game.players || 0), 0).toLocaleString()}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Average Rating
-                  </CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(myGames.reduce((sum, game) => sum + (game.rating || 0), 0) / myGames.length).toFixed(1)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>My Published Games</CardTitle>
-                <CardDescription>
-                  Manage and monitor all your games in one place
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {myGames.map(game => (
-                    <div key={game.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1 space-y-1 mb-4 md:mb-0">
-                        <div className="flex items-center">
-                          <h3 className="font-medium text-lg">{game.title}</h3>
-                          <Badge variant="outline" className="ml-2">
-                            {game.rating} ★
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{game.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Published: {game.publishedAt.toLocaleDateString()} • {game.players.toLocaleString()} players
-                        </p>
+            {isLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Total Games
+                      </CardTitle>
+                      <GamepadIcon className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{myGames.length}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Total Players
+                      </CardTitle>
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {myGames.reduce((sum, game) => sum + (game.players || 0), 0).toLocaleString()}
                       </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/games/${game.id}`}>
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        Average Rating
+                      </CardTitle>
+                      <Star className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {myGames.length > 0 
+                          ? (myGames.reduce((sum, game) => sum + (game.rating || 0), 0) / myGames.length).toFixed(1)
+                          : "N/A"
+                        }
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>My Published Games</CardTitle>
+                    <CardDescription>
+                      Manage and monitor all your games in one place
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {myGames.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <GamepadIcon className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No games published yet</h3>
+                        <p className="text-sm text-muted-foreground mb-6">
+                          Get started by publishing your first game
+                        </p>
+                        <Button asChild>
+                          <Link href="/dashboard/submit">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Submit Game
                           </Link>
                         </Button>
-                        <Button variant="outline" size="sm">
-                          <Pencil className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-destructive">
-                          <Trash className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ) : (
+                      <div className="space-y-4">
+                        {myGames.map(game => (
+                          <div key={game.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg">
+                            <div className="flex-1 space-y-1 mb-4 md:mb-0">
+                              <div className="flex items-center">
+                                <h3 className="font-medium text-lg">{game.title}</h3>
+                                {game.rating && (
+                                  <Badge variant="outline" className="ml-2">
+                                    {game.rating} ★
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">{game.description}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Published: {game.publishedAt.toLocaleDateString()} • {(game.players || 0).toLocaleString()} players
+                              </p>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/games/${game.id}`}>
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Link>
+                              </Button>
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/dashboard/games/${game.id}/edit`}>
+                                  <Pencil className="h-4 w-4 mr-1" />
+                                  Edit
+                                </Link>
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-destructive">
+                                <Trash className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </TabsContent>
           
           <TabsContent value="analytics" className="space-y-4">
