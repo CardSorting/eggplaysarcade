@@ -11,6 +11,10 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { setupAuth } from "./auth";
+import { requireAuth, requireRole, requirePermission } from "./middleware/authMiddleware";
+import { UserRole } from "@/lib/types";
+import passport from "passport";
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -67,9 +71,92 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
+  
   // API routes
   const apiRouter = express.Router();
   
+  // === Authentication routes ===
+  apiRouter.post("/register", async (req: Request, res: Response) => {
+    try {
+      const { username, password, email, role = UserRole.PLAYER } = req.body;
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Validate user data
+      const validatedData = insertUserSchema.parse({ 
+        username, 
+        password, 
+        role,
+        email,
+        avatarUrl: null,
+        bio: null
+      });
+      
+      // Create user
+      const user = await storage.createUser(validatedData);
+      
+      // Login the user after registration
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to log in after registration" });
+        }
+        // Don't return the password
+        const { password: _, ...userWithoutPassword } = user;
+        return res.status(201).json(userWithoutPassword);
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+  
+  apiRouter.post("/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: Express.User | false, info: any) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        const { password: _, ...userWithoutPassword } = user as any;
+        return res.json(userWithoutPassword);
+      });
+    })(req, res, next);
+  });
+  
+  apiRouter.post("/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Failed to logout" });
+      }
+      res.status(200).json({ message: "Logged out successfully" });
+    });
+  });
+  
+  apiRouter.get("/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    // Don't return the password
+    const { password: _, ...userWithoutPassword } = req.user;
+    res.json(userWithoutPassword);
+  });
+  
+  // === Public routes ===
   // Get all categories
   apiRouter.get("/categories", async (req: Request, res: Response) => {
     try {
@@ -140,9 +227,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Submit a new game
+  // === Protected routes ===
+  // Submit a new game - requires authentication and 'submit_games' permission
   apiRouter.post(
     "/games", 
+    requireAuth,
+    requirePermission("submit_games"),
     upload.fields([
       { name: 'gameFile', maxCount: 1 },
       { name: 'thumbnail', maxCount: 1 }
@@ -165,17 +255,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.body.tags = req.body.tags.split(',').map((tag: string) => tag.trim());
         }
         
-        // Hard-code userId since we don't have auth yet
-        const userId = 1;
-        
-        // Check if user exists, if not create a dummy user
-        const user = await storage.getUser(userId);
-        if (!user) {
-          await storage.createUser({
-            username: 'demo_user',
-            password: 'password' // In a real app, this would be hashed
-          });
-        }
+        // Use authenticated user's ID
+        const userId = req.user.id;
         
         // Set the file paths for storage
         const gameData = {
@@ -204,68 +285,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
   
-  // Rate a game
-  apiRouter.post("/games/:id/rate", async (req: Request, res: Response) => {
+  // Rate a game - requires authentication and 'rate_games' permission
+  apiRouter.post(
+    "/games/:id/rate", 
+    requireAuth,
+    requirePermission("rate_games"),
+    async (req: Request, res: Response) => {
+      try {
+        const gameId = parseInt(req.params.id);
+        const { value } = req.body;
+        
+        // Use authenticated user's ID
+        const userId = req.user.id;
+        
+        // Check if game exists
+        const game = await storage.getGameById(gameId);
+        if (!game) {
+          return res.status(404).json({ message: "Game not found" });
+        }
+        
+        // Validate rating data
+        const validatedData = insertRatingSchema.parse({
+          userId,
+          gameId,
+          value: parseInt(value)
+        });
+        
+        // Create rating
+        const rating = await storage.createRating(validatedData);
+        res.status(201).json(rating);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          const validationError = fromZodError(error);
+          return res.status(400).json({ message: validationError.message });
+        }
+        
+        res.status(500).json({ message: "Failed to rate game" });
+      }
+    }
+  );
+  
+  // === Admin routes ===
+  const adminRouter = express.Router();
+  
+  // Only admin can access these routes
+  apiRouter.use("/admin", requireAuth, requireRole(UserRole.ADMIN), adminRouter);
+  
+  // Admin dashboard data
+  adminRouter.get("/dashboard", async (req, res) => {
     try {
-      const gameId = parseInt(req.params.id);
-      const { value } = req.body;
-      
-      // Hard-code userId since we don't have auth yet
-      const userId = 1;
-      
-      // Check if game exists
-      const game = await storage.getGameById(gameId);
-      if (!game) {
-        return res.status(404).json({ message: "Game not found" });
-      }
-      
-      // Validate rating data
-      const validatedData = insertRatingSchema.parse({
-        userId,
-        gameId,
-        value: parseInt(value)
+      // In a real app, this would return dashboard metrics
+      res.json({
+        totalUsers: 0,
+        totalGames: 0,
+        totalCategories: 0,
+        recentGames: []
       });
-      
-      // Create rating
-      const rating = await storage.createRating(validatedData);
-      res.status(201).json(rating);
     } catch (error) {
-      if (error instanceof ZodError) {
-        const validationError = fromZodError(error);
-        return res.status(400).json({ message: validationError.message });
-      }
-      
-      res.status(500).json({ message: "Failed to rate game" });
+      res.status(500).json({ message: "Failed to fetch admin dashboard data" });
     }
   });
   
-  // Register user
-  apiRouter.post("/users/register", async (req: Request, res: Response) => {
+  // Create a new category (admin only)
+  adminRouter.post("/categories", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { name, icon } = req.body;
       
-      // Check if username already exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+      if (!name || !icon) {
+        return res.status(400).json({ message: "Name and icon are required" });
       }
       
-      // Validate user data
-      const validatedData = insertUserSchema.parse({ username, password });
+      const category = await storage.createCategory({
+        name,
+        icon
+      });
       
-      // Create user
-      const user = await storage.createUser(validatedData);
-      
-      // Don't return the password
-      const { password: _, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
+      res.status(201).json(category);
     } catch (error) {
-      if (error instanceof ZodError) {
-        const validationError = fromZodError(error);
-        return res.status(400).json({ message: validationError.message });
-      }
-      
-      res.status(500).json({ message: "Failed to register user" });
+      res.status(500).json({ message: "Failed to create category" });
     }
   });
   
