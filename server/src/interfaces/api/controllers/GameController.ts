@@ -1,69 +1,49 @@
-import { Request, Response } from 'express';
-import { DiContainer } from '../../../infrastructure/config/DiContainer';
-import { GameDTO } from '../../../application/dto/GameDTO';
-import { EntityId } from '../../../domain/value-objects/EntityId';
-import { validateGame } from '../../validators/GameValidator';
+import { Request, Response } from "express";
+import { GameRepository } from "../../../domain/repositories/GameRepository";
+import { CategoryRepository } from "../../../domain/repositories/CategoryRepository";
+import { UserRepository } from "../../../domain/repositories/UserRepository";
+import { RatingRepository } from "../../../domain/repositories/RatingRepository";
+import { CreateGameCommand } from "../../../application/commands/CreateGameCommand";
+import { GetGamesQuery } from "../../../application/queries/GetGamesQuery";
+import { GetGameByIdQuery } from "../../../application/queries/GetGameByIdQuery";
+import { EntityId } from "../../../domain/value-objects/EntityId";
+import { GameDTO } from "../../../application/dto/GameDTO";
+import { Game } from "../../../domain/entities/Game";
+import { Rating } from "../../../domain/entities/Rating";
 
 /**
- * Game Controller following the Controller pattern
- * Handles HTTP requests related to games
+ * Controller for game-related API endpoints
+ * Following the Controller pattern from Clean Architecture
  */
 export class GameController {
-  /**
-   * Get all games with optional filtering by category or search term
-   */
-  async getGames(req: Request, res: Response): Promise<void> {
-    try {
-      const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
-      const searchTerm = req.query.search as string | undefined;
-      
-      const container = DiContainer.getInstance();
-      const getGamesQuery = container.getGamesQuery();
-      
-      const games = await getGamesQuery.execute({
-        categoryId,
-        searchTerm
-      });
-      
-      res.json(GameDTO.fromEntities(games));
-    } catch (error: any) {
-      res.status(500).json({ message: error.message || 'Failed to fetch games' });
-    }
+  private readonly gameRepository: GameRepository;
+  private readonly categoryRepository: CategoryRepository;
+  private readonly userRepository: UserRepository;
+  private readonly ratingRepository: RatingRepository;
+
+  constructor(
+    gameRepository: GameRepository,
+    categoryRepository: CategoryRepository,
+    userRepository: UserRepository,
+    ratingRepository: RatingRepository
+  ) {
+    this.gameRepository = gameRepository;
+    this.categoryRepository = categoryRepository;
+    this.userRepository = userRepository;
+    this.ratingRepository = ratingRepository;
   }
 
   /**
-   * Get featured games
+   * Get all games
    */
-  async getFeaturedGames(req: Request, res: Response): Promise<void> {
+  async getAllGames(req: Request, res: Response): Promise<void> {
     try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 4;
-      
-      const container = DiContainer.getInstance();
-      const getFeaturedGamesQuery = container.getFeaturedGamesQuery();
-      
-      const games = await getFeaturedGamesQuery.execute(limit);
-      
-      res.json(GameDTO.fromEntities(games));
-    } catch (error: any) {
-      res.status(500).json({ message: error.message || 'Failed to fetch featured games' });
-    }
-  }
-
-  /**
-   * Get popular games
-   */
-  async getPopularGames(req: Request, res: Response): Promise<void> {
-    try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 3;
-      
-      const container = DiContainer.getInstance();
-      const getPopularGamesQuery = container.getPopularGamesQuery();
-      
-      const games = await getPopularGamesQuery.execute(limit);
-      
-      res.json(GameDTO.fromEntities(games));
-    } catch (error: any) {
-      res.status(500).json({ message: error.message || 'Failed to fetch popular games' });
+      const query = new GetGamesQuery(this.gameRepository, this.categoryRepository);
+      const games = await query.execute();
+      res.status(200).json(games);
+    } catch (error) {
+      console.error("Error fetching games:", error);
+      res.status(500).json({ error: "Failed to fetch games" });
     }
   }
 
@@ -74,23 +54,29 @@ export class GameController {
     try {
       const id = parseInt(req.params.id);
       
-      const container = DiContainer.getInstance();
-      const getGameByIdQuery = container.getGameByIdQuery();
-      const updateGamePlayersCommand = container.getUpdateGamePlayersCommand();
-      
-      const game = await getGameByIdQuery.execute(id);
-      
-      if (!game) {
-        res.status(404).json({ message: 'Game not found' });
+      if (isNaN(id)) {
+        res.status(400).json({ error: "Invalid game ID" });
         return;
       }
       
-      // Increment players count
-      await updateGamePlayersCommand.execute({ gameId: id, increment: 1 });
+      const query = new GetGameByIdQuery(
+        this.gameRepository,
+        this.categoryRepository,
+        this.userRepository,
+        this.ratingRepository
+      );
       
-      res.json(GameDTO.fromEntity(game));
-    } catch (error: any) {
-      res.status(500).json({ message: error.message || 'Failed to fetch game' });
+      const game = await query.execute(id);
+      
+      if (!game) {
+        res.status(404).json({ error: "Game not found" });
+        return;
+      }
+      
+      res.status(200).json(game);
+    } catch (error) {
+      console.error("Error fetching game:", error);
+      res.status(500).json({ error: "Failed to fetch game" });
     }
   }
 
@@ -99,56 +85,91 @@ export class GameController {
    */
   async createGame(req: Request, res: Response): Promise<void> {
     try {
-      const files = req.files as {
-        [fieldname: string]: Express.Multer.File[];
-      };
-      
-      if (!files.gameFile || !files.thumbnail) {
-        res.status(400).json({ message: 'Both game file and thumbnail are required' });
-        return;
-      }
-      
-      const gameFile = files.gameFile[0];
-      const thumbnail = files.thumbnail[0];
-      
-      // Parse tags if present
-      let tags: string[] = [];
-      if (req.body.tags && typeof req.body.tags === 'string') {
-        tags = req.body.tags.split(',').map((tag: string) => tag.trim());
-      }
-      
-      // Hard-coded userId for demo
-      const userId = 1;
-      
-      // Prepare game data
-      const gameData = {
-        title: req.body.title,
-        description: req.body.description,
-        instructions: req.body.instructions,
-        thumbnailUrl: `/uploads/thumbnails/${thumbnail.filename}`,
-        gameUrl: `/uploads/games/${gameFile.filename}`,
-        categoryId: parseInt(req.body.categoryId),
+      const {
+        title,
+        description,
+        instructions,
+        thumbnailUrl,
+        gameUrl,
+        categoryId,
         userId,
         tags
-      };
+      } = req.body;
       
-      // Validate game data
-      const validationResult = validateGame(gameData);
-      if (!validationResult.success) {
-        res.status(400).json({ message: validationResult.message });
+      if (!title || !description || !gameUrl || !categoryId || !userId) {
+        res.status(400).json({ error: "Missing required fields" });
         return;
       }
       
-      // Create game
-      const container = DiContainer.getInstance();
-      const createGameCommand = container.getCreateGameCommand();
+      const command = new CreateGameCommand(
+        this.gameRepository,
+        this.categoryRepository,
+        this.userRepository
+      );
       
-      const game = await createGameCommand.execute(gameData);
+      const game = await command.execute(
+        title,
+        description,
+        instructions || "",
+        thumbnailUrl || "",
+        gameUrl,
+        categoryId,
+        userId,
+        tags || []
+      );
       
-      res.status(201).json(GameDTO.fromEntity(game));
-    } catch (error: any) {
-      console.error(error);
-      res.status(500).json({ message: error.message || 'Failed to create game' });
+      res.status(201).json(game);
+    } catch (error) {
+      console.error("Error creating game:", error);
+      
+      if ((error as Error).message.includes("not found")) {
+        res.status(404).json({ error: (error as Error).message });
+      } else {
+        res.status(500).json({ error: "Failed to create game" });
+      }
+    }
+  }
+
+  /**
+   * Update game play count
+   */
+  async incrementPlayCount(req: Request, res: Response): Promise<void> {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        res.status(400).json({ error: "Invalid game ID" });
+        return;
+      }
+      
+      // Get the game
+      const game = await this.gameRepository.findById(new EntityId(id));
+      
+      if (!game) {
+        res.status(404).json({ error: "Game not found" });
+        return;
+      }
+      
+      // Increment the play count
+      game.incrementPlayCount();
+      
+      // Save the updated game
+      await this.gameRepository.update(game);
+      
+      // Get the updated game with related entities
+      const query = new GetGameByIdQuery(
+        this.gameRepository,
+        this.categoryRepository,
+        this.userRepository,
+        this.ratingRepository
+      );
+      
+      const updatedGame = await query.execute(id);
+      
+      res.status(200).json(updatedGame);
+    } catch (error) {
+      console.error("Error updating play count:", error);
+      res.status(500).json({ error: "Failed to update play count" });
     }
   }
 
@@ -158,28 +179,60 @@ export class GameController {
   async rateGame(req: Request, res: Response): Promise<void> {
     try {
       const gameId = parseInt(req.params.id);
-      const { value } = req.body;
+      const { userId, stars, comment } = req.body;
       
-      if (isNaN(value) || value < 1 || value > 5) {
-        res.status(400).json({ message: 'Rating must be a number between 1 and 5' });
+      if (isNaN(gameId) || !userId || !stars || stars < 1 || stars > 5) {
+        res.status(400).json({ error: "Invalid request data" });
         return;
       }
       
-      // Hard-coded userId for demo
-      const userId = 1;
+      // Get the game
+      const game = await this.gameRepository.findById(new EntityId(gameId));
       
-      const container = DiContainer.getInstance();
-      const createRatingCommand = container.getCreateRatingCommand();
+      if (!game) {
+        res.status(404).json({ error: "Game not found" });
+        return;
+      }
       
-      const rating = await createRatingCommand.execute({
-        userId,
-        gameId,
-        value: parseInt(value)
-      });
+      // Get the user
+      const user = await this.userRepository.findById(new EntityId(userId));
       
-      res.status(201).json({ id: rating.id.value, value: rating.value });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message || 'Failed to rate game' });
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      
+      // Create the rating
+      const rating = Rating.create(
+        new EntityId(gameId),
+        new EntityId(userId),
+        stars,
+        comment || null
+      );
+      
+      // Save the rating
+      await this.ratingRepository.save(rating);
+      
+      // Add the rating to the game
+      game.addRating(rating);
+      
+      // Save the updated game
+      await this.gameRepository.update(game);
+      
+      // Get the updated game with related entities
+      const query = new GetGameByIdQuery(
+        this.gameRepository,
+        this.categoryRepository,
+        this.userRepository,
+        this.ratingRepository
+      );
+      
+      const updatedGame = await query.execute(gameId);
+      
+      res.status(200).json(updatedGame);
+    } catch (error) {
+      console.error("Error rating game:", error);
+      res.status(500).json({ error: "Failed to rate game" });
     }
   }
 }

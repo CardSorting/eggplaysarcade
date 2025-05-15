@@ -1,166 +1,85 @@
-import { GameRepository } from '../../domain/repositories/GameRepository';
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
-import { UserRepository } from '../../domain/repositories/UserRepository';
-import { RatingRepository } from '../../domain/repositories/RatingRepository';
+import { GameRepository } from "../../domain/repositories/GameRepository";
+import { CategoryRepository } from "../../domain/repositories/CategoryRepository";
+import { UserRepository } from "../../domain/repositories/UserRepository";
+import { RatingRepository } from "../../domain/repositories/RatingRepository";
 
-import { MemGameRepository } from '../persistence/MemGameRepository';
-import { MemCategoryRepository } from '../persistence/MemCategoryRepository';
-import { MemUserRepository } from '../persistence/MemUserRepository';
-import { MemRatingRepository } from '../persistence/MemRatingRepository';
+import { MemGameRepository } from "../persistence/MemGameRepository";
+import { MemCategoryRepository } from "../persistence/MemCategoryRepository";
+import { MemUserRepository } from "../persistence/MemUserRepository";
+import { MemRatingRepository } from "../persistence/MemRatingRepository";
 
-import { CreateGameCommand } from '../../application/commands/CreateGameCommand';
-import { CreateRatingCommand } from '../../application/commands/CreateRatingCommand';
-import { CreateUserCommand } from '../../application/commands/CreateUserCommand';
-import { UpdateGamePlayersCommand } from '../../application/commands/UpdateGamePlayersCommand';
-
-import { GetGamesQuery } from '../../application/queries/GetGamesQuery';
-import { GetGameByIdQuery } from '../../application/queries/GetGameByIdQuery';
-import { GetFeaturedGamesQuery } from '../../application/queries/GetFeaturedGamesQuery';
-import { GetPopularGamesQuery } from '../../application/queries/GetPopularGamesQuery';
-import { GetCategoriesQuery } from '../../application/queries/GetCategoriesQuery';
+import { GameController } from "../../interfaces/api/controllers/GameController";
+import { CategoryController } from "../../interfaces/api/controllers/CategoryController";
+import { UserController } from "../../interfaces/api/controllers/UserController";
 
 /**
- * Dependency Injection Container
- * This provides a centralized place to manage application dependencies
- * and follows the Dependency Inversion Principle from SOLID
+ * A simple dependency injection container
+ * This manages the creation and lifecycle of service instances
  */
 export class DiContainer {
   private static instance: DiContainer;
-  
-  // Repositories
-  private readonly gameRepository: GameRepository;
-  private readonly categoryRepository: CategoryRepository;
-  private readonly userRepository: UserRepository;
-  private readonly ratingRepository: RatingRepository;
-  
-  // Commands
-  private readonly createGameCommand: CreateGameCommand;
-  private readonly createRatingCommand: CreateRatingCommand;
-  private readonly createUserCommand: CreateUserCommand;
-  private readonly updateGamePlayersCommand: UpdateGamePlayersCommand;
-  
-  // Queries
-  private readonly gamesQuery: GetGamesQuery;
-  private readonly gameByIdQuery: GetGameByIdQuery;
-  private readonly featuredGamesQuery: GetFeaturedGamesQuery;
-  private readonly popularGamesQuery: GetPopularGamesQuery;
-  private readonly categoriesQuery: GetCategoriesQuery;
-  
+  private services: Map<string, any>;
+
   private constructor() {
-    // Initialize repositories
-    this.gameRepository = new MemGameRepository();
-    this.categoryRepository = new MemCategoryRepository();
-    this.userRepository = new MemUserRepository();
-    this.ratingRepository = new MemRatingRepository();
-    
-    // Initialize commands
-    this.createGameCommand = new CreateGameCommand(
-      this.gameRepository,
-      this.categoryRepository,
-      this.userRepository
-    );
-    
-    this.createRatingCommand = new CreateRatingCommand(
-      this.ratingRepository,
-      this.gameRepository
-    );
-    
-    this.createUserCommand = new CreateUserCommand(
-      this.userRepository
-    );
-    
-    this.updateGamePlayersCommand = new UpdateGamePlayersCommand(
-      this.gameRepository
-    );
-    
-    // Initialize queries
-    this.gamesQuery = new GetGamesQuery(
-      this.gameRepository,
-      this.categoryRepository
-    );
-    
-    this.gameByIdQuery = new GetGameByIdQuery(
-      this.gameRepository,
-      this.categoryRepository,
-      this.userRepository,
-      this.ratingRepository
-    );
-    
-    this.featuredGamesQuery = new GetFeaturedGamesQuery(
-      this.gameRepository,
-      this.categoryRepository
-    );
-    
-    this.popularGamesQuery = new GetPopularGamesQuery(
-      this.gameRepository,
-      this.categoryRepository
-    );
-    
-    this.categoriesQuery = new GetCategoriesQuery(
-      this.categoryRepository,
-      this.gameRepository
-    );
+    this.services = new Map<string, any>();
+    this.registerServices();
   }
-  
-  static getInstance(): DiContainer {
+
+  /**
+   * Get the singleton instance of the container
+   */
+  public static getInstance(): DiContainer {
     if (!DiContainer.instance) {
       DiContainer.instance = new DiContainer();
     }
     return DiContainer.instance;
   }
-  
-  // Repository getters
-  getGameRepository(): GameRepository {
-    return this.gameRepository;
+
+  /**
+   * Register all services
+   */
+  private registerServices(): void {
+    // Register repositories
+    this.registerSingleton<GameRepository>("GameRepository", new MemGameRepository());
+    this.registerSingleton<CategoryRepository>("CategoryRepository", new MemCategoryRepository());
+    this.registerSingleton<UserRepository>("UserRepository", new MemUserRepository());
+    this.registerSingleton<RatingRepository>("RatingRepository", new MemRatingRepository());
+
+    // Register controllers
+    this.registerSingleton<GameController>("GameController", new GameController(
+      this.get<GameRepository>("GameRepository"),
+      this.get<CategoryRepository>("CategoryRepository"),
+      this.get<UserRepository>("UserRepository"),
+      this.get<RatingRepository>("RatingRepository")
+    ));
+
+    this.registerSingleton<CategoryController>("CategoryController", new CategoryController(
+      this.get<CategoryRepository>("CategoryRepository"),
+      this.get<GameRepository>("GameRepository")
+    ));
+
+    this.registerSingleton<UserController>("UserController", new UserController(
+      this.get<UserRepository>("UserRepository"),
+      this.get<GameRepository>("GameRepository"),
+      this.get<RatingRepository>("RatingRepository")
+    ));
   }
-  
-  getCategoryRepository(): CategoryRepository {
-    return this.categoryRepository;
+
+  /**
+   * Register a singleton service
+   */
+  public registerSingleton<T>(name: string, instance: T): void {
+    this.services.set(name, instance);
   }
-  
-  getUserRepository(): UserRepository {
-    return this.userRepository;
-  }
-  
-  getRatingRepository(): RatingRepository {
-    return this.ratingRepository;
-  }
-  
-  // Command getters
-  getCreateGameCommand(): CreateGameCommand {
-    return this.createGameCommand;
-  }
-  
-  getCreateRatingCommand(): CreateRatingCommand {
-    return this.createRatingCommand;
-  }
-  
-  getCreateUserCommand(): CreateUserCommand {
-    return this.createUserCommand;
-  }
-  
-  getUpdateGamePlayersCommand(): UpdateGamePlayersCommand {
-    return this.updateGamePlayersCommand;
-  }
-  
-  // Query getters
-  getGamesQuery(): GetGamesQuery {
-    return this.gamesQuery;
-  }
-  
-  getGameByIdQuery(): GetGameByIdQuery {
-    return this.gameByIdQuery;
-  }
-  
-  getFeaturedGamesQuery(): GetFeaturedGamesQuery {
-    return this.featuredGamesQuery;
-  }
-  
-  getPopularGamesQuery(): GetPopularGamesQuery {
-    return this.popularGamesQuery;
-  }
-  
-  getCategoriesQuery(): GetCategoriesQuery {
-    return this.categoriesQuery;
+
+  /**
+   * Get a service by name
+   */
+  public get<T>(name: string): T {
+    const service = this.services.get(name);
+    if (!service) {
+      throw new Error(`Service ${name} not found in container`);
+    }
+    return service as T;
   }
 }
