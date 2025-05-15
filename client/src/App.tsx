@@ -8,6 +8,7 @@ import UnauthorizedPage from "@/pages/unauthorized";
 import AuthSelectionPage from "@/pages/auth";
 import PlayerAuthPage from "@/pages/auth/player-auth";
 import DeveloperAuthPage from "@/pages/auth/developer-auth";
+import AdminAuthPage from "@/pages/auth/admin-auth";
 import Home from "@/pages/Home";
 import Games from "@/pages/Games";
 import GameDetail from "@/pages/GameDetail";
@@ -60,6 +61,7 @@ function Router() {
           <Route path="/auth" component={AuthSelectionPage} />
           <Route path="/auth/player" component={PlayerAuthPage} />
           <Route path="/auth/developer" component={DeveloperAuthPage} />
+          <Route path="/auth/admin" component={AdminAuthPage} />
           <Route path="/unauthorized" component={UnauthorizedPage} />
           <Route component={NotFound} />
         </Switch>

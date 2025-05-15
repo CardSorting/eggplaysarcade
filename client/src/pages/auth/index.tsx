@@ -208,6 +208,15 @@ const AuthSelectionPage = () => {
                 Log in
               </Button>
             </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              <Button 
+                variant="link" 
+                className="p-0 text-sm"
+                onClick={() => navigate('/auth/admin')}
+              >
+                Admin Portal
+              </Button>
+            </p>
           </div>
         </div>
 
