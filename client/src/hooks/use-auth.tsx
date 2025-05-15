@@ -28,6 +28,9 @@ type RegisterData = {
   password: string;
   email?: string;
   role?: UserRole;
+  displayName?: string;
+  companyName?: string;  // For game developers
+  portfolio?: string;    // For game developers
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);

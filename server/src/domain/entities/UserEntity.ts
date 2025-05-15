@@ -1,74 +1,64 @@
-import { UserRole } from "../../shared/schema";
+import { UserRole } from "../../../../shared/schema";
 
 /**
- * User Entity - Core domain entity following DDD principles
- * This is the heart of our domain model for users
+ * Base User Entity following Domain-Driven Design principles
+ * This is an abstract class that defines the core properties and methods for all user types
  */
 export abstract class UserEntity {
-  protected id: number | null;
-  protected username: string;
-  protected email: string | null;
-  protected passwordHash: string;
-  protected role: UserRole;
-  protected bio: string | null;
-  protected avatarUrl: string | null;
-  protected displayName: string | null;
-  protected createdAt: Date;
-  protected lastLogin: Date | null;
-  protected isVerified: boolean;
+  private id: number | null;
+  private username: string;
+  private passwordHash: string;
+  private role: UserRole;
+  private email: string | null;
+  private avatarUrl: string | null;
+  private bio: string | null;
+  private displayName: string | null;
+  private createdAt: Date;
+  private lastLogin: Date | null;
+  private isVerified: boolean | null;
 
   constructor(
-    id: number | null,
     username: string,
-    email: string | null,
     passwordHash: string,
     role: UserRole,
-    bio: string | null = null,
-    avatarUrl: string | null = null,
-    displayName: string | null = null,
-    createdAt: Date = new Date(),
-    lastLogin: Date | null = null,
-    isVerified: boolean = false
+    options: {
+      id?: number;
+      email?: string | null;
+      avatarUrl?: string | null;
+      bio?: string | null;
+      displayName?: string | null;
+      createdAt?: Date;
+      lastLogin?: Date | null;
+      isVerified?: boolean | null;
+    } = {}
   ) {
-    this.id = id;
+    this.id = options.id || null;
     this.username = username;
-    this.email = email;
     this.passwordHash = passwordHash;
     this.role = role;
-    this.bio = bio;
-    this.avatarUrl = avatarUrl;
-    this.displayName = displayName;
-    this.createdAt = createdAt;
-    this.lastLogin = lastLogin;
-    this.isVerified = isVerified;
-    
-    this.validate();
+    this.email = options.email || null;
+    this.avatarUrl = options.avatarUrl || null;
+    this.bio = options.bio || null;
+    this.displayName = options.displayName || null;
+    this.createdAt = options.createdAt || new Date();
+    this.lastLogin = options.lastLogin || null;
+    this.isVerified = options.isVerified || false;
   }
 
-  /**
-   * Domain validation rules
-   */
-  protected validate(): void {
-    if (!this.username || this.username.trim() === '') {
-      throw new Error('Username cannot be empty');
-    }
-    
-    if (!this.passwordHash || this.passwordHash.trim() === '') {
-      throw new Error('Password cannot be empty');
-    }
-  }
-
-  // Getters
+  // Getters and setters
   public getId(): number | null {
     return this.id;
   }
 
-  public getUsername(): string {
-    return this.username;
+  public setId(id: number): void {
+    // ID should only be set once by the persistence layer
+    if (this.id === null) {
+      this.id = id;
+    }
   }
 
-  public getEmail(): string | null {
-    return this.email;
+  public getUsername(): string {
+    return this.username;
   }
 
   public getPasswordHash(): string {
@@ -79,16 +69,36 @@ export abstract class UserEntity {
     return this.role;
   }
 
-  public getBio(): string | null {
-    return this.bio;
+  public getEmail(): string | null {
+    return this.email;
+  }
+
+  public setEmail(email: string): void {
+    this.email = email;
   }
 
   public getAvatarUrl(): string | null {
     return this.avatarUrl;
   }
 
+  public setAvatarUrl(url: string): void {
+    this.avatarUrl = url;
+  }
+
+  public getBio(): string | null {
+    return this.bio;
+  }
+
+  public setBio(bio: string): void {
+    this.bio = bio;
+  }
+
   public getDisplayName(): string | null {
     return this.displayName;
+  }
+
+  public setDisplayName(name: string): void {
+    this.displayName = name;
   }
 
   public getCreatedAt(): Date {
@@ -98,29 +108,21 @@ export abstract class UserEntity {
   public getLastLogin(): Date | null {
     return this.lastLogin;
   }
-  
-  public isUserVerified(): boolean {
+
+  public setLastLogin(date: Date): void {
+    this.lastLogin = date;
+  }
+
+  public isUserVerified(): boolean | null {
     return this.isVerified;
   }
 
-  // Business logic methods
-  public updateLastLogin(): void {
-    this.lastLogin = new Date();
+  public setVerified(isVerified: boolean): void {
+    this.isVerified = isVerified;
   }
-  
-  public verify(): void {
-    this.isVerified = true;
-  }
-  
-  public updateProfile(bio: string | null, avatarUrl: string | null, displayName: string | null): void {
-    this.bio = bio;
-    this.avatarUrl = avatarUrl;
-    this.displayName = displayName;
-  }
-  
-  /**
-   * Abstract method to be implemented by specific user subclasses
-   * This enforces type-specific validation and business rules
-   */
-  public abstract canPerformAction(action: string): boolean;
+
+  // Domain logic methods
+  public abstract canSubmitGames(): boolean;
+  public abstract canRateGames(): boolean;
+  public abstract canEditProfile(): boolean;
 }

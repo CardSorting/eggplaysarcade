@@ -1,109 +1,54 @@
-import { UserEntity } from './UserEntity';
-import { UserRole } from '../../shared/schema';
+import { UserRole } from "../../../../shared/schema";
+import { UserEntity } from "./UserEntity";
 
 /**
- * PlayerEntity - Concrete implementation of UserEntity for Players
- * Contains player-specific business logic and validation
+ * Player Entity - represents a user who can play and rate games
+ * Domain logic specific to players is implemented here
  */
 export class PlayerEntity extends UserEntity {
-  private favoriteGenres: string[] = [];
-  private playedGames: number = 0;
-
   constructor(
-    id: number | null,
     username: string,
-    email: string | null,
     passwordHash: string,
-    bio: string | null = null,
-    avatarUrl: string | null = null,
-    displayName: string | null = null,
-    createdAt: Date = new Date(),
-    lastLogin: Date | null = null,
-    isVerified: boolean = false,
-    favoriteGenres: string[] = []
+    options: {
+      id?: number;
+      email?: string | null;
+      avatarUrl?: string | null;
+      bio?: string | null;
+      displayName?: string | null;
+      createdAt?: Date;
+      lastLogin?: Date | null;
+      isVerified?: boolean | null;
+    } = {}
   ) {
-    super(
-      id, 
-      username, 
-      email, 
-      passwordHash,
-      UserRole.PLAYER,
-      bio,
-      avatarUrl,
-      displayName,
-      createdAt,
-      lastLogin,
-      isVerified
-    );
-    
-    this.favoriteGenres = favoriteGenres;
+    super(username, passwordHash, UserRole.PLAYER, options);
+  }
+
+  /**
+   * Player-specific business logic
+   */
+  
+  // Players cannot submit games
+  public canSubmitGames(): boolean {
+    return false;
   }
   
-  /**
-   * Player-specific business logic for permissions
-   */
-  public canPerformAction(action: string): boolean {
-    // Players can play games, rate games, etc.
-    const playerAllowedActions = [
-      'play_games',
-      'rate_games',
-      'manage_playlists',
-      'edit_profile'
-    ];
-    
-    return playerAllowedActions.includes(action);
+  // Players can rate games
+  public canRateGames(): boolean {
+    return true;
   }
   
-  /**
-   * Record that a player has played a game
-   */
-  public recordGamePlayed(): void {
-    this.playedGames++;
+  // Players can edit their own profiles
+  public canEditProfile(): boolean {
+    return true;
   }
   
-  /**
-   * Add a favorite genre
-   */
-  public addFavoriteGenre(genre: string): void {
-    if (!this.favoriteGenres.includes(genre)) {
-      this.favoriteGenres.push(genre);
-    }
+  // Player-specific methods
+  public canAddToWishlist(): boolean {
+    return true;
   }
   
-  /**
-   * Get the player's favorite genres
-   */
-  public getFavoriteGenres(): string[] {
-    return [...this.favoriteGenres];
-  }
-  
-  /**
-   * Get number of games played
-   */
-  public getPlayedGamesCount(): number {
-    return this.playedGames;
-  }
-  
-  /**
-   * Factory method to create a new PlayerEntity
-   */
-  public static create(
-    username: string, 
-    password: string,
-    email: string | null = null,
-    displayName: string | null = null
-  ): PlayerEntity {
-    return new PlayerEntity(
-      null, // New player, no ID yet
-      username,
-      email,
-      password, // This will be hashed in the application layer
-      null, // No bio yet
-      null, // No avatar yet
-      displayName || username,
-      new Date(),
-      null,
-      false
-    );
+  // Players can track game progress
+  public canTrackProgress(): boolean {
+    return true;
   }
 }

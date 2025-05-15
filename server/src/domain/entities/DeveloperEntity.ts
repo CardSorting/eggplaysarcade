@@ -1,166 +1,93 @@
-import { UserEntity } from './UserEntity';
-import { UserRole } from '../../shared/schema';
+import { UserRole } from "../../../../shared/schema";
+import { UserEntity } from "./UserEntity";
 
 /**
- * DeveloperEntity - Concrete implementation of UserEntity for Game Developers
- * Contains developer-specific business logic and validation
+ * Game Developer Entity - represents a user who can create and submit games
+ * Domain logic specific to game developers is implemented here
  */
 export class DeveloperEntity extends UserEntity {
   private companyName: string | null;
   private portfolio: string | null;
-  private publishedGames: number = 0;
-  private developerVerified: boolean = false;
+  private verificationStatus: 'pending' | 'verified' | 'rejected';
 
   constructor(
-    id: number | null,
     username: string,
-    email: string | null,
     passwordHash: string,
-    bio: string | null = null,
-    avatarUrl: string | null = null,
-    displayName: string | null = null,
-    createdAt: Date = new Date(),
-    lastLogin: Date | null = null,
-    isVerified: boolean = false,
-    companyName: string | null = null,
-    portfolio: string | null = null,
-    publishedGames: number = 0,
-    developerVerified: boolean = false
+    options: {
+      id?: number;
+      email?: string | null;
+      avatarUrl?: string | null;
+      bio?: string | null;
+      displayName?: string | null;
+      companyName?: string | null;
+      portfolio?: string | null;
+      createdAt?: Date;
+      lastLogin?: Date | null;
+      isVerified?: boolean | null;
+      verificationStatus?: 'pending' | 'verified' | 'rejected';
+    } = {}
   ) {
-    super(
-      id, 
-      username, 
-      email, 
-      passwordHash,
-      UserRole.GAME_DEVELOPER,
-      bio,
-      avatarUrl,
-      displayName,
-      createdAt,
-      lastLogin,
-      isVerified
-    );
-    
-    this.companyName = companyName;
-    this.portfolio = portfolio;
-    this.publishedGames = publishedGames;
-    this.developerVerified = developerVerified;
-    
-    this.validateDeveloper();
+    super(username, passwordHash, UserRole.GAME_DEVELOPER, options);
+    this.companyName = options.companyName || null;
+    this.portfolio = options.portfolio || null;
+    this.verificationStatus = options.verificationStatus || 'pending';
+  }
+
+  /**
+   * Developer-specific business logic
+   */
+  
+  // Game developers can submit games
+  public canSubmitGames(): boolean {
+    return this.verificationStatus === 'verified';
   }
   
-  /**
-   * Developer-specific validation
-   */
-  private validateDeveloper(): void {
-    // Add developer-specific validation rules here
-    if (this.developerVerified && !this.email) {
-      throw new Error('Verified developers must have an email address');
-    }
+  // Game developers can rate games
+  public canRateGames(): boolean {
+    return true;
   }
   
-  /**
-   * Developer-specific business logic for permissions
-   */
-  public canPerformAction(action: string): boolean {
-    // Developers can manage their own games, view analytics, etc.
-    const developerAllowedActions = [
-      'manage_own_games',
-      'view_own_analytics',
-      'submit_games',
-      'edit_profile',
-      'play_games',
-      'rate_games',
-      'manage_playlists'
-    ];
-    
-    return developerAllowedActions.includes(action);
+  // Game developers can edit their own profiles
+  public canEditProfile(): boolean {
+    return true;
   }
   
-  /**
-   * Record a new published game
-   */
-  public recordPublishedGame(): void {
-    this.publishedGames++;
-  }
-  
-  /**
-   * Get company name
-   */
+  // Developer-specific getters and setters
   public getCompanyName(): string | null {
     return this.companyName;
   }
   
-  /**
-   * Set company name
-   */
-  public setCompanyName(companyName: string | null): void {
+  public setCompanyName(companyName: string): void {
     this.companyName = companyName;
   }
   
-  /**
-   * Get portfolio URL
-   */
   public getPortfolio(): string | null {
     return this.portfolio;
   }
   
-  /**
-   * Set portfolio URL
-   */
-  public setPortfolio(portfolio: string | null): void {
+  public setPortfolio(portfolio: string): void {
     this.portfolio = portfolio;
   }
   
-  /**
-   * Get number of published games
-   */
-  public getPublishedGamesCount(): number {
-    return this.publishedGames;
+  public getVerificationStatus(): 'pending' | 'verified' | 'rejected' {
+    return this.verificationStatus;
   }
   
-  /**
-   * Is the developer verified (for higher visibility, etc.)
-   */
-  public isDeveloperVerified(): boolean {
-    return this.developerVerified;
+  public setVerificationStatus(status: 'pending' | 'verified' | 'rejected'): void {
+    this.verificationStatus = status;
   }
   
-  /**
-   * Verify the developer (e.g., after admin approval)
-   */
-  public verifyDeveloper(): void {
-    if (!this.email) {
-      throw new Error('Cannot verify developer without an email address');
-    }
-    
-    this.developerVerified = true;
+  // Domain-specific methods
+  public isPendingVerification(): boolean {
+    return this.verificationStatus === 'pending';
   }
   
-  /**
-   * Factory method to create a new DeveloperEntity
-   */
-  public static create(
-    username: string, 
-    password: string,
-    email: string | null = null,
-    companyName: string | null = null,
-    portfolio: string | null = null,
-    displayName: string | null = null
-  ): DeveloperEntity {
-    return new DeveloperEntity(
-      null, // New developer, no ID yet
-      username,
-      email,
-      password, // This will be hashed in the application layer
-      null, // No bio yet
-      null, // No avatar yet
-      displayName || companyName || username,
-      new Date(),
-      null,
-      false,
-      companyName,
-      portfolio
-    );
+  public isRejected(): boolean {
+    return this.verificationStatus === 'rejected';
+  }
+  
+  public hasValidProfile(): boolean {
+    // Check if developer has completed their profile with required information
+    return !!this.getCompanyName() || !!this.getDisplayName();
   }
 }
