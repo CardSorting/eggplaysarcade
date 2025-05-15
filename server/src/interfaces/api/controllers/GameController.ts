@@ -3,13 +3,9 @@ import { GameRepository } from "../../../domain/repositories/GameRepository";
 import { CategoryRepository } from "../../../domain/repositories/CategoryRepository";
 import { UserRepository } from "../../../domain/repositories/UserRepository";
 import { RatingRepository } from "../../../domain/repositories/RatingRepository";
-import { CreateGameCommand } from "../../../application/commands/CreateGameCommand";
-import { GetGamesQuery } from "../../../application/queries/GetGamesQuery";
-import { GetGameByIdQuery } from "../../../application/queries/GetGameByIdQuery";
 import { EntityId } from "../../../domain/value-objects/EntityId";
-import { GameDTO } from "../../../application/dto/GameDTO";
 import { Game } from "../../../domain/entities/Game";
-import { Rating } from "../../../domain/entities/Rating";
+import { GameDTO } from "../../../application/dto/GameDTO";
 
 /**
  * Controller for game-related API endpoints
@@ -38,9 +34,21 @@ export class GameController {
    */
   async getAllGames(req: Request, res: Response): Promise<void> {
     try {
-      const query = new GetGamesQuery(this.gameRepository, this.categoryRepository);
-      const games = await query.execute();
-      res.status(200).json(games);
+      const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
+      const search = req.query.search as string | undefined;
+      
+      let games: Game[];
+      
+      if (categoryId) {
+        games = await this.gameRepository.findByCategory(new EntityId(categoryId));
+      } else if (search) {
+        games = await this.gameRepository.search(search);
+      } else {
+        games = await this.gameRepository.findAll();
+      }
+      
+      const gameDTOs = games.map(game => GameDTO.fromEntity(game));
+      res.status(200).json(gameDTOs);
     } catch (error) {
       console.error("Error fetching games:", error);
       res.status(500).json({ error: "Failed to fetch games" });
@@ -59,21 +67,25 @@ export class GameController {
         return;
       }
       
-      const query = new GetGameByIdQuery(
-        this.gameRepository,
-        this.categoryRepository,
-        this.userRepository,
-        this.ratingRepository
-      );
-      
-      const game = await query.execute(id);
+      const game = await this.gameRepository.findById(new EntityId(id));
       
       if (!game) {
         res.status(404).json({ error: "Game not found" });
         return;
       }
       
-      res.status(200).json(game);
+      // Get category for the game
+      const category = await this.categoryRepository.findById(game.categoryId);
+      
+      // Create DTO
+      const gameDTO = GameDTO.fromEntity(game);
+      
+      // Add category if found
+      if (category) {
+        gameDTO.withCategory(category);
+      }
+      
+      res.status(200).json(gameDTO);
     } catch (error) {
       console.error("Error fetching game:", error);
       res.status(500).json({ error: "Failed to fetch game" });
@@ -85,53 +97,53 @@ export class GameController {
    */
   async createGame(req: Request, res: Response): Promise<void> {
     try {
-      const {
+      const { title, description, instructions, thumbnailUrl, gameUrl, categoryId, tags, userId } = req.body;
+      
+      if (!title || !description || !instructions || !thumbnailUrl || !gameUrl || !categoryId || !userId) {
+        res.status(400).json({ error: "Missing required fields" });
+        return;
+      }
+      
+      // Verify category exists
+      const category = await this.categoryRepository.findById(new EntityId(categoryId));
+      if (!category) {
+        res.status(400).json({ error: "Category not found" });
+        return;
+      }
+      
+      // Verify user exists
+      const user = await this.userRepository.findById(new EntityId(userId));
+      if (!user) {
+        res.status(400).json({ error: "User not found" });
+        return;
+      }
+      
+      // Create the game entity
+      const game = Game.create(
         title,
         description,
         instructions,
         thumbnailUrl,
         gameUrl,
-        categoryId,
-        userId,
-        tags
-      } = req.body;
-      
-      if (!title || !description || !gameUrl || !categoryId || !userId) {
-        res.status(400).json({ error: "Missing required fields" });
-        return;
-      }
-      
-      const command = new CreateGameCommand(
-        this.gameRepository,
-        this.categoryRepository,
-        this.userRepository
+        new EntityId(categoryId),
+        new EntityId(userId),
+        tags || null
       );
       
-      const game = await command.execute(
-        title,
-        description,
-        instructions || "",
-        thumbnailUrl || "",
-        gameUrl,
-        categoryId,
-        userId,
-        tags || []
-      );
+      // Save the game
+      const savedGame = await this.gameRepository.save(game);
       
-      res.status(201).json(game);
+      // Return the DTO
+      const gameDTO = GameDTO.fromEntity(savedGame);
+      res.status(201).json(gameDTO);
     } catch (error) {
       console.error("Error creating game:", error);
-      
-      if ((error as Error).message.includes("not found")) {
-        res.status(404).json({ error: (error as Error).message });
-      } else {
-        res.status(500).json({ error: "Failed to create game" });
-      }
+      res.status(500).json({ error: "Failed to create game" });
     }
   }
 
   /**
-   * Update game play count
+   * Increment play count for a game
    */
   async incrementPlayCount(req: Request, res: Response): Promise<void> {
     try {
@@ -142,7 +154,6 @@ export class GameController {
         return;
       }
       
-      // Get the game
       const game = await this.gameRepository.findById(new EntityId(id));
       
       if (!game) {
@@ -150,26 +161,18 @@ export class GameController {
         return;
       }
       
-      // Increment the play count
-      game.incrementPlayCount();
+      // Increment the player count
+      game.incrementPlayers(1);
       
       // Save the updated game
-      await this.gameRepository.update(game);
+      const updatedGame = await this.gameRepository.save(game);
       
-      // Get the updated game with related entities
-      const query = new GetGameByIdQuery(
-        this.gameRepository,
-        this.categoryRepository,
-        this.userRepository,
-        this.ratingRepository
-      );
-      
-      const updatedGame = await query.execute(id);
-      
-      res.status(200).json(updatedGame);
+      // Return the DTO
+      const gameDTO = GameDTO.fromEntity(updatedGame);
+      res.status(200).json(gameDTO);
     } catch (error) {
-      console.error("Error updating play count:", error);
-      res.status(500).json({ error: "Failed to update play count" });
+      console.error("Error incrementing play count:", error);
+      res.status(500).json({ error: "Failed to increment play count" });
     }
   }
 
@@ -179,14 +182,13 @@ export class GameController {
   async rateGame(req: Request, res: Response): Promise<void> {
     try {
       const gameId = parseInt(req.params.id);
-      const { userId, stars, comment } = req.body;
+      const { userId, value } = req.body;
       
-      if (isNaN(gameId) || !userId || !stars || stars < 1 || stars > 5) {
-        res.status(400).json({ error: "Invalid request data" });
+      if (isNaN(gameId) || !userId || isNaN(value)) {
+        res.status(400).json({ error: "Invalid request parameters" });
         return;
       }
       
-      // Get the game
       const game = await this.gameRepository.findById(new EntityId(gameId));
       
       if (!game) {
@@ -194,42 +196,26 @@ export class GameController {
         return;
       }
       
-      // Get the user
-      const user = await this.userRepository.findById(new EntityId(userId));
-      
-      if (!user) {
-        res.status(404).json({ error: "User not found" });
-        return;
-      }
-      
-      // Create the rating
-      const rating = Rating.create(
-        new EntityId(gameId),
+      // Create rating
+      const rating = await this.ratingRepository.createRating(
         new EntityId(userId),
-        stars,
-        comment || null
+        new EntityId(gameId),
+        value
       );
       
-      // Save the rating
-      await this.ratingRepository.save(rating);
-      
-      // Add the rating to the game
-      game.addRating(rating);
+      // Update game rating (this would ideally be calculated from all ratings)
+      game.updateRating(value);
       
       // Save the updated game
-      await this.gameRepository.update(game);
+      const updatedGame = await this.gameRepository.save(game);
       
-      // Get the updated game with related entities
-      const query = new GetGameByIdQuery(
-        this.gameRepository,
-        this.categoryRepository,
-        this.userRepository,
-        this.ratingRepository
-      );
-      
-      const updatedGame = await query.execute(gameId);
-      
-      res.status(200).json(updatedGame);
+      // Return the rating
+      res.status(201).json({
+        gameId,
+        userId,
+        value,
+        id: rating.id?.value
+      });
     } catch (error) {
       console.error("Error rating game:", error);
       res.status(500).json({ error: "Failed to rate game" });

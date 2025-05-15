@@ -12,7 +12,7 @@ export interface GameRepository {
   findAll(): Promise<Game[]>;
   
   /**
-   * Find a game by ID
+   * Find a game by its ID
    */
   findById(id: EntityId): Promise<Game | null>;
   
@@ -27,27 +27,22 @@ export interface GameRepository {
   findFeatured(limit: number): Promise<Game[]>;
   
   /**
-   * Find popular games
+   * Find popular games by play count
    */
   findPopular(limit: number): Promise<Game[]>;
   
   /**
-   * Search games by keyword
-   */
-  search(query: string): Promise<Game[]>;
-  
-  /**
-   * Save a game
+   * Save a game (create or update)
    */
   save(game: Game): Promise<Game>;
-  
-  /**
-   * Update a game
-   */
-  update(game: Game): Promise<Game>;
   
   /**
    * Delete a game
    */
   delete(id: EntityId): Promise<void>;
+  
+  /**
+   * Search for games by title or description
+   */
+  search(query: string): Promise<Game[]>;
 }

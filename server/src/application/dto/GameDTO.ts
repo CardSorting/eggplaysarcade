@@ -1,12 +1,10 @@
 import { Game } from "../../domain/entities/Game";
-import { Category } from "../../domain/entities/Category";
-import { User } from "../../domain/entities/User";
-import { Rating } from "../../domain/entities/Rating";
 import { EntityId } from "../../domain/value-objects/EntityId";
+import { Category } from "../../domain/entities/Category";
 
 /**
- * GameDTO is a Data Transfer Object for Game entity.
- * It's used to transfer game data between layers, particularly from domain to API.
+ * Data Transfer Object for Game entity
+ * Following the DTO pattern for clean separation between layers
  */
 export class GameDTO {
   id: number;
@@ -16,207 +14,127 @@ export class GameDTO {
   thumbnailUrl: string;
   gameUrl: string;
   categoryId: number;
-  userId: number;
-  tags: string[];
-  createdAt: string;
-  playCount: number;
   category?: CategoryDTO;
-  user?: UserDTO;
-  ratings?: RatingDTO[];
-  averageRating?: number;
+  tags: string[];
+  publishedAt: string;
+  userId: number;
+  rating: number;
+  playerCount: number;
 
-  constructor(game: Game) {
-    this.id = game.id ? game.id.value : 0;
-    this.title = game.title;
-    this.description = game.description;
-    this.instructions = game.instructions;
-    this.thumbnailUrl = game.thumbnailUrl;
-    this.gameUrl = game.gameUrl;
-    this.categoryId = game.categoryId.value;
-    this.userId = game.userId.value;
-    this.tags = [...game.tags];
-    this.createdAt = game.createdAt.toISOString();
-    this.playCount = game.playCount;
-    this.averageRating = game.getAverageRating();
+  private constructor(
+    id: number,
+    title: string,
+    description: string,
+    instructions: string,
+    thumbnailUrl: string,
+    gameUrl: string,
+    categoryId: number,
+    tags: string[],
+    publishedAt: string,
+    userId: number,
+    rating: number,
+    playerCount: number
+  ) {
+    this.id = id;
+    this.title = title;
+    this.description = description;
+    this.instructions = instructions;
+    this.thumbnailUrl = thumbnailUrl;
+    this.gameUrl = gameUrl;
+    this.categoryId = categoryId;
+    this.tags = tags || [];
+    this.publishedAt = publishedAt;
+    this.userId = userId;
+    this.rating = rating;
+    this.playerCount = playerCount;
   }
 
   /**
    * Convert a domain Game entity to a GameDTO
    */
-  static fromEntity(game: Game): GameDTO {
-    return new GameDTO(game);
+  public static fromEntity(game: Game): GameDTO {
+    if (!game.id) {
+      throw new Error("Cannot create DTO from unsaved Game entity");
+    }
+
+    return new GameDTO(
+      game.id.value,
+      game.title,
+      game.description,
+      game.instructions,
+      game.thumbnailUrl,
+      game.gameUrl,
+      game.categoryId.value,
+      game.tags || [],
+      game.publishedAt.toISOString(),
+      game.userId.value,
+      game.rating,
+      game.playerCount
+    );
   }
 
   /**
-   * Convert a domain Game entity to a GameDTO, including related entities
+   * Convert multiple domain Game entities to GameDTOs
    */
-  static fromEntityWithRelations(
-    game: Game, 
-    category?: Category, 
-    user?: User, 
-    ratings?: Rating[]
-  ): GameDTO {
-    const dto = new GameDTO(game);
-    
-    if (category) {
-      dto.category = CategoryDTO.fromEntity(category);
-    }
-    
-    if (user) {
-      dto.user = UserDTO.fromEntity(user);
-    }
-    
-    if (ratings && ratings.length > 0) {
-      dto.ratings = ratings.map(rating => RatingDTO.fromEntity(rating));
-    }
-    
-    return dto;
+  public static fromEntities(games: Game[]): GameDTO[] {
+    return games.map(game => this.fromEntity(game));
   }
 
   /**
    * Convert a GameDTO to a domain Game entity
    */
-  toEntity(): Game {
-    return new Game(
-      this.id ? new EntityId(this.id) : null,
+  public toEntity(): Game {
+    return Game.reconstitute(
+      this.id,
       this.title,
       this.description,
       this.instructions,
       this.thumbnailUrl,
       this.gameUrl,
-      new EntityId(this.categoryId),
-      new EntityId(this.userId),
+      this.categoryId,
       this.tags,
-      new Date(this.createdAt),
-      this.playCount,
-      this.ratings?.map(ratingDto => ratingDto.toEntity()) || []
+      new Date(this.publishedAt),
+      this.userId,
+      this.rating,
+      this.playerCount
     );
+  }
+
+  /**
+   * Add category information to this DTO
+   */
+  public withCategory(category: Category): GameDTO {
+    this.category = CategoryDTO.fromEntity(category);
+    return this;
   }
 }
 
 /**
- * CategoryDTO is a Data Transfer Object for Category entity.
+ * Basic DTO for Category entity
  */
 export class CategoryDTO {
   id: number;
   name: string;
   icon: string;
 
-  constructor(category: Category) {
-    this.id = category.id ? category.id.value : 0;
-    this.name = category.name;
-    this.icon = category.icon;
+  private constructor(id: number, name: string, icon: string) {
+    this.id = id;
+    this.name = name;
+    this.icon = icon;
   }
 
   /**
    * Convert a domain Category entity to a CategoryDTO
    */
-  static fromEntity(category: Category): CategoryDTO {
-    return new CategoryDTO(category);
-  }
-
-  /**
-   * Convert a CategoryDTO to a domain Category entity
-   */
-  toEntity(): Category {
-    return new Category(
-      this.id ? new EntityId(this.id) : null,
-      this.name,
-      this.icon
-    );
-  }
-}
-
-/**
- * UserDTO is a Data Transfer Object for User entity.
- */
-export class UserDTO {
-  id: number;
-  username: string;
-  email: string;
-  avatarUrl: string | null;
-  bio: string | null;
-
-  constructor(user: User) {
-    this.id = user.id ? user.id.value : 0;
-    this.username = user.username;
-    this.email = user.email;
-    this.avatarUrl = user.avatarUrl;
-    this.bio = user.bio;
-  }
-
-  /**
-   * Convert a domain User entity to a UserDTO
-   */
-  static fromEntity(user: User): UserDTO {
-    return new UserDTO(user);
-  }
-
-  /**
-   * Convert a UserDTO to a domain User entity
-   */
-  toEntity(): User {
-    return new User(
-      this.id ? new EntityId(this.id) : null,
-      this.username,
-      this.email,
-      '' // Password hash is not included in DTO for security
-    );
-  }
-}
-
-/**
- * RatingDTO is a Data Transfer Object for Rating entity.
- */
-export class RatingDTO {
-  id: number;
-  gameId: number;
-  userId: number;
-  stars: number;
-  comment: string | null;
-  createdAt: string;
-  user?: UserDTO;
-
-  constructor(rating: Rating) {
-    this.id = rating.id ? rating.id.value : 0;
-    this.gameId = rating.gameId.value;
-    this.userId = rating.userId.value;
-    this.stars = rating.stars;
-    this.comment = rating.comment;
-    this.createdAt = rating.createdAt.toISOString();
-  }
-
-  /**
-   * Convert a domain Rating entity to a RatingDTO
-   */
-  static fromEntity(rating: Rating): RatingDTO {
-    return new RatingDTO(rating);
-  }
-
-  /**
-   * Convert a domain Rating entity to a RatingDTO, including related entities
-   */
-  static fromEntityWithUser(rating: Rating, user?: User): RatingDTO {
-    const dto = new RatingDTO(rating);
-    
-    if (user) {
-      dto.user = UserDTO.fromEntity(user);
+  public static fromEntity(category: any): CategoryDTO {
+    if (!category.id) {
+      throw new Error("Cannot create DTO from unsaved Category entity");
     }
-    
-    return dto;
-  }
 
-  /**
-   * Convert a RatingDTO to a domain Rating entity
-   */
-  toEntity(): Rating {
-    return new Rating(
-      this.id ? new EntityId(this.id) : null,
-      new EntityId(this.gameId),
-      new EntityId(this.userId),
-      this.stars,
-      this.comment,
-      new Date(this.createdAt)
+    return new CategoryDTO(
+      typeof category.id === 'object' ? category.id.value : category.id,
+      category.name,
+      category.icon
     );
   }
 }

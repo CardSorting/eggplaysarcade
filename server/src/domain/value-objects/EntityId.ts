@@ -1,35 +1,46 @@
 /**
- * EntityId is a value object representing a unique identifier for an entity.
- * Following the Value Object pattern from Domain-Driven Design.
+ * Value object representing an entity identifier
+ * Using Value Object pattern from Domain-Driven Design
  */
 export class EntityId {
   private readonly _value: number;
 
   constructor(value: number) {
     if (value <= 0) {
-      throw new Error('EntityId must be a positive number');
+      throw new Error('Entity ID must be a positive number');
     }
     this._value = value;
   }
 
   /**
-   * Get the raw value of the ID
+   * Get the underlying number value of this ID
    */
-  get value(): number {
+  public get value(): number {
     return this._value;
   }
 
   /**
-   * Check if two EntityIds are equal
+   * Compare this entity ID with another for equality
    */
-  equals(otherId: EntityId): boolean {
-    return this._value === otherId.value;
+  public equals(other: EntityId | null): boolean {
+    if (!other) {
+      return false;
+    }
+    
+    return this._value === other._value;
   }
 
   /**
-   * String representation of the EntityId
+   * Convert this entity ID to a string
    */
-  toString(): string {
+  public toString(): string {
     return String(this._value);
+  }
+
+  /**
+   * Convert this entity ID to a JSON compatible value
+   */
+  public toJSON(): number {
+    return this._value;
   }
 }

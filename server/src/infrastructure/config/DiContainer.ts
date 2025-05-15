@@ -8,6 +8,9 @@ import { MemCategoryRepository } from "../persistence/MemCategoryRepository";
 import { MemUserRepository } from "../persistence/MemUserRepository";
 import { MemRatingRepository } from "../persistence/MemRatingRepository";
 
+// Import database repositories
+import { DbGameRepository } from "../persistence/DbGameRepository";
+
 import { GameController } from "../../interfaces/api/controllers/GameController";
 import { CategoryController } from "../../interfaces/api/controllers/CategoryController";
 import { UserController } from "../../interfaces/api/controllers/UserController";

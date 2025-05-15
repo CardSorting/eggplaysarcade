@@ -1,9 +1,8 @@
 import { EntityId } from "../value-objects/EntityId";
-import { Rating } from "./Rating";
 
 /**
- * Game entity represents a game in the domain.
- * Following the Entity pattern from Domain-Driven Design.
+ * Game entity representing a gaming product in the domain
+ * Following the Domain-Driven Design principles
  */
 export class Game {
   private _id: EntityId | null;
@@ -13,25 +12,25 @@ export class Game {
   private _thumbnailUrl: string;
   private _gameUrl: string;
   private _categoryId: EntityId;
+  private _tags: string[] | null;
+  private _publishedAt: Date;
   private _userId: EntityId;
-  private _tags: string[];
-  private _createdAt: Date;
-  private _playCount: number;
-  private _ratings: Rating[];
+  private _rating: number;
+  private _playerCount: number;
 
-  constructor(
+  private constructor(
     id: EntityId | null,
     title: string,
     description: string,
     instructions: string,
-    thumbnailUrl: string,
+    thumbnailUrl: string, 
     gameUrl: string,
     categoryId: EntityId,
+    tags: string[] | null,
+    publishedAt: Date,
     userId: EntityId,
-    tags: string[] = [],
-    createdAt: Date = new Date(),
-    playCount: number = 0,
-    ratings: Rating[] = []
+    rating: number = 0,
+    playerCount: number = 0
   ) {
     this._id = id;
     this._title = title;
@@ -40,109 +39,17 @@ export class Game {
     this._thumbnailUrl = thumbnailUrl;
     this._gameUrl = gameUrl;
     this._categoryId = categoryId;
-    this._userId = userId;
     this._tags = tags;
-    this._createdAt = createdAt;
-    this._playCount = playCount;
-    this._ratings = ratings;
+    this._publishedAt = publishedAt;
+    this._userId = userId;
+    this._rating = rating;
+    this._playerCount = playerCount;
   }
 
-  // Getters
-  get id(): EntityId | null {
-    return this._id;
-  }
-
-  get title(): string {
-    return this._title;
-  }
-
-  get description(): string {
-    return this._description;
-  }
-
-  get instructions(): string {
-    return this._instructions;
-  }
-
-  get thumbnailUrl(): string {
-    return this._thumbnailUrl;
-  }
-
-  get gameUrl(): string {
-    return this._gameUrl;
-  }
-
-  get categoryId(): EntityId {
-    return this._categoryId;
-  }
-
-  get userId(): EntityId {
-    return this._userId;
-  }
-
-  get tags(): string[] {
-    return [...this._tags];
-  }
-
-  get createdAt(): Date {
-    return new Date(this._createdAt);
-  }
-
-  get playCount(): number {
-    return this._playCount;
-  }
-
-  get ratings(): Rating[] {
-    return [...this._ratings];
-  }
-
-  // Business methods
-  incrementPlayCount(): void {
-    this._playCount += 1;
-  }
-
-  addRating(rating: Rating): void {
-    // Check if the user has already rated this game
-    const existingRatingIndex = this._ratings.findIndex(
-      r => r.userId.equals(rating.userId)
-    );
-
-    // If an existing rating is found, replace it
-    if (existingRatingIndex >= 0) {
-      this._ratings[existingRatingIndex] = rating;
-    } else {
-      this._ratings.push(rating);
-    }
-  }
-
-  removeRating(userId: EntityId): void {
-    this._ratings = this._ratings.filter(
-      rating => !rating.userId.equals(userId)
-    );
-  }
-
-  // Utility methods
-  getAverageRating(): number {
-    if (this._ratings.length === 0) return 0;
-    
-    const totalStars = this._ratings.reduce(
-      (sum, rating) => sum + rating.stars, 0
-    );
-    
-    return totalStars / this._ratings.length;
-  }
-
-  // Domain rules validation
-  private validateTitle(title: string): boolean {
-    return title.length >= 3 && title.length <= 100;
-  }
-
-  private validateDescription(description: string): boolean {
-    return description.length >= 10 && description.length <= 2000;
-  }
-
-  // Factory method for creating a new game
-  static create(
+  /**
+   * Create a new game entity
+   */
+  public static create(
     title: string,
     description: string,
     instructions: string,
@@ -150,21 +57,150 @@ export class Game {
     gameUrl: string,
     categoryId: EntityId,
     userId: EntityId,
-    tags: string[] = []
+    tags: string[] | null = null
   ): Game {
     return new Game(
-      null, // ID will be assigned by the repository
+      null,
       title,
       description,
       instructions,
       thumbnailUrl,
       gameUrl,
       categoryId,
-      userId,
       tags,
       new Date(),
-      0,
-      []
+      userId
     );
+  }
+
+  /**
+   * Reconstruct an existing game entity from persistence
+   */
+  public static reconstitute(
+    id: number,
+    title: string,
+    description: string,
+    instructions: string,
+    thumbnailUrl: string,
+    gameUrl: string,
+    categoryId: number,
+    tags: string[] | null,
+    publishedAt: Date,
+    userId: number,
+    rating: number | null,
+    playerCount: number | null
+  ): Game {
+    return new Game(
+      new EntityId(id),
+      title,
+      description,
+      instructions,
+      thumbnailUrl,
+      gameUrl,
+      new EntityId(categoryId),
+      tags,
+      publishedAt,
+      new EntityId(userId),
+      rating || 0,
+      playerCount || 0
+    );
+  }
+
+  /**
+   * Increment player count for this game
+   */
+  public incrementPlayers(count: number = 1): void {
+    this._playerCount += count;
+  }
+
+  /**
+   * Update the rating of this game
+   */
+  public updateRating(newRating: number): void {
+    this._rating = newRating;
+  }
+
+  /**
+   * Get the ID of this game
+   */
+  public get id(): EntityId | null {
+    return this._id;
+  }
+
+  /**
+   * Get the title of this game
+   */
+  public get title(): string {
+    return this._title;
+  }
+
+  /**
+   * Get the description of this game
+   */
+  public get description(): string {
+    return this._description;
+  }
+
+  /**
+   * Get the instructions for this game
+   */
+  public get instructions(): string {
+    return this._instructions;
+  }
+
+  /**
+   * Get the thumbnail URL for this game
+   */
+  public get thumbnailUrl(): string {
+    return this._thumbnailUrl;
+  }
+
+  /**
+   * Get the game URL for this game
+   */
+  public get gameUrl(): string {
+    return this._gameUrl;
+  }
+
+  /**
+   * Get the category ID for this game
+   */
+  public get categoryId(): EntityId {
+    return this._categoryId;
+  }
+
+  /**
+   * Get the tags for this game
+   */
+  public get tags(): string[] | null {
+    return this._tags;
+  }
+
+  /**
+   * Get the published date for this game
+   */
+  public get publishedAt(): Date {
+    return this._publishedAt;
+  }
+
+  /**
+   * Get the user ID for this game
+   */
+  public get userId(): EntityId {
+    return this._userId;
+  }
+
+  /**
+   * Get the rating for this game
+   */
+  public get rating(): number {
+    return this._rating;
+  }
+
+  /**
+   * Get the player count for this game
+   */
+  public get playerCount(): number {
+    return this._playerCount;
   }
 }
