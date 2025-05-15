@@ -2,7 +2,8 @@ import {
   users, type User, type InsertUser,
   categories, type Category, type InsertCategory,
   games, type Game, type InsertGame,
-  ratings, type Rating, type InsertRating
+  ratings, type Rating, type InsertRating,
+  wishlists, type Wishlist, type InsertWishlist
 } from "@shared/schema";
 
 export interface IStorage {
@@ -29,6 +30,12 @@ export interface IStorage {
   // Rating methods
   createRating(rating: InsertRating): Promise<Rating>;
   getGameRatings(gameId: number): Promise<Rating[]>;
+  
+  // Wishlist methods
+  addToWishlist(wishlistItem: InsertWishlist): Promise<Wishlist>;
+  removeFromWishlist(userId: number, gameId: number): Promise<boolean>;
+  getWishlistItems(userId: number): Promise<Game[]>;
+  isGameInWishlist(userId: number, gameId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -36,6 +43,7 @@ export class MemStorage implements IStorage {
   private categories: Map<number, Category>;
   private games: Map<number, Game>;
   private ratings: Map<number, Rating>;
+  private wishlistItems: Map<string, Wishlist>;
   private userCurrentId: number;
   private categoryCurrentId: number;
   private gameCurrentId: number;
@@ -46,6 +54,7 @@ export class MemStorage implements IStorage {
     this.categories = new Map();
     this.games = new Map();
     this.ratings = new Map();
+    this.wishlistItems = new Map();
     this.userCurrentId = 1;
     this.categoryCurrentId = 1;
     this.gameCurrentId = 1;
@@ -186,6 +195,54 @@ export class MemStorage implements IStorage {
     return Array.from(this.ratings.values()).filter(
       (rating) => rating.gameId === gameId
     );
+  }
+  
+  // Wishlist methods
+  async addToWishlist(wishlistItem: InsertWishlist): Promise<Wishlist> {
+    const key = `${wishlistItem.userId}-${wishlistItem.gameId}`;
+    const newItem: Wishlist = {
+      ...wishlistItem,
+      addedAt: new Date()
+    };
+    this.wishlistItems.set(key, newItem);
+    return newItem;
+  }
+  
+  async removeFromWishlist(userId: number, gameId: number): Promise<boolean> {
+    const key = `${userId}-${gameId}`;
+    return this.wishlistItems.delete(key);
+  }
+  
+  async getWishlistItems(userId: number): Promise<Game[]> {
+    const wishlistEntries = Array.from(this.wishlistItems.values())
+      .filter(item => item.userId === userId);
+      
+    // Get the actual games for each wishlist item
+    const games: Game[] = [];
+    for (const entry of wishlistEntries) {
+      const game = await this.getGameById(entry.gameId);
+      if (game) {
+        games.push(game);
+      }
+    }
+    
+    // Sort by most recently added
+    return games.sort((a, b) => {
+      const itemA = Array.from(this.wishlistItems.values())
+        .find(item => item.userId === userId && item.gameId === a.id);
+      const itemB = Array.from(this.wishlistItems.values())
+        .find(item => item.userId === userId && item.gameId === b.id);
+      
+      if (itemA && itemB) {
+        return new Date(itemB.addedAt).getTime() - new Date(itemA.addedAt).getTime();
+      }
+      return 0;
+    });
+  }
+  
+  async isGameInWishlist(userId: number, gameId: number): Promise<boolean> {
+    const key = `${userId}-${gameId}`;
+    return this.wishlistItems.has(key);
   }
 }
 

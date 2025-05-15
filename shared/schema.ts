@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -40,6 +40,17 @@ export const ratings = pgTable("ratings", {
   value: integer("value").notNull(),
 });
 
+// Wishlist items for users to save games they're interested in
+export const wishlists = pgTable("wishlists", {
+  userId: integer("user_id").notNull(),
+  gameId: integer("game_id").notNull(),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.gameId] }),
+  }
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -68,6 +79,11 @@ export const insertRatingSchema = createInsertSchema(ratings).pick({
   value: true,
 });
 
+export const insertWishlistSchema = createInsertSchema(wishlists).pick({
+  userId: true,
+  gameId: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -80,3 +96,6 @@ export type Game = typeof games.$inferSelect;
 
 export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
+
+export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
+export type Wishlist = typeof wishlists.$inferSelect;
