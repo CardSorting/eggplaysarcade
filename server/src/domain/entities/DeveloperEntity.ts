@@ -1,14 +1,14 @@
-import { UserRole } from "../../../../shared/schema";
-import { UserEntity } from "./UserEntity";
+import { UserEntity } from './UserEntity';
+import { UserRole } from '../../../../shared/schema';
 
 /**
- * Game Developer Entity - represents a user who can create and submit games
- * Domain logic specific to game developers is implemented here
+ * Developer Entity
+ * Extends the base UserEntity with developer-specific attributes and behavior
+ * This represents a game developer user in the domain model
  */
 export class DeveloperEntity extends UserEntity {
   private companyName: string | null;
   private portfolio: string | null;
-  private verificationStatus: 'pending' | 'verified' | 'rejected';
 
   constructor(
     username: string,
@@ -24,70 +24,45 @@ export class DeveloperEntity extends UserEntity {
       createdAt?: Date;
       lastLogin?: Date | null;
       isVerified?: boolean | null;
-      verificationStatus?: 'pending' | 'verified' | 'rejected';
     } = {}
   ) {
-    super(username, passwordHash, UserRole.GAME_DEVELOPER, options);
+    super(username, passwordHash, {
+      ...options,
+      role: UserRole.GAME_DEVELOPER
+    });
+    
     this.companyName = options.companyName || null;
     this.portfolio = options.portfolio || null;
-    this.verificationStatus = options.verificationStatus || 'pending';
   }
 
-  /**
-   * Developer-specific business logic
-   */
-  
-  // Game developers can submit games
-  public canSubmitGames(): boolean {
-    return this.verificationStatus === 'verified';
-  }
-  
-  // Game developers can rate games
-  public canRateGames(): boolean {
-    return true;
-  }
-  
-  // Game developers can edit their own profiles
-  public canEditProfile(): boolean {
-    return true;
-  }
-  
-  // Developer-specific getters and setters
+  // Getters for developer-specific fields
   public getCompanyName(): string | null {
     return this.companyName;
   }
-  
-  public setCompanyName(companyName: string): void {
-    this.companyName = companyName;
-  }
-  
+
   public getPortfolio(): string | null {
     return this.portfolio;
   }
-  
-  public setPortfolio(portfolio: string): void {
+
+  // Setters for developer-specific fields
+  public setCompanyName(companyName: string | null): void {
+    this.companyName = companyName;
+  }
+
+  public setPortfolio(portfolio: string | null): void {
+    // Simple URL validation
+    if (portfolio && !portfolio.startsWith('http')) {
+      throw new Error('Portfolio URL must be a valid URL starting with http:// or https://');
+    }
     this.portfolio = portfolio;
   }
-  
-  public getVerificationStatus(): 'pending' | 'verified' | 'rejected' {
-    return this.verificationStatus;
+
+  // Developer-specific business logic
+  public canSubmitGames(): boolean {
+    return this.isUserVerified() === true;
   }
-  
-  public setVerificationStatus(status: 'pending' | 'verified' | 'rejected'): void {
-    this.verificationStatus = status;
-  }
-  
-  // Domain-specific methods
-  public isPendingVerification(): boolean {
-    return this.verificationStatus === 'pending';
-  }
-  
-  public isRejected(): boolean {
-    return this.verificationStatus === 'rejected';
-  }
-  
-  public hasValidProfile(): boolean {
-    // Check if developer has completed their profile with required information
-    return !!this.getCompanyName() || !!this.getDisplayName();
+
+  public canUpdateGames(): boolean {
+    return true;
   }
 }

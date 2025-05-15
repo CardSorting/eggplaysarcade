@@ -68,4 +68,14 @@ export function setupAuth(app: Express) {
       done(err);
     }
   });
+
+  // Import the new domain-driven auth routes will be done dynamically
+  // Using dynamic import for the auth routes
+  import('./src/interfaces/routes/authRoutes').then(module => {
+    // Register the advanced auth routes under /api/auth prefix
+    const setupAuthRoutes = module.setupAuthRoutes;
+    app.use('/api/auth', setupAuthRoutes());
+  }).catch(err => {
+    console.error('Failed to load auth routes:', err);
+  });
 }

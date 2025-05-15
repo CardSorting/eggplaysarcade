@@ -1,9 +1,10 @@
-import { UserRole } from "../../../../shared/schema";
-import { UserEntity } from "./UserEntity";
+import { UserEntity } from './UserEntity';
+import { UserRole } from '../../../../shared/schema';
 
 /**
- * Player Entity - represents a user who can play and rate games
- * Domain logic specific to players is implemented here
+ * Player Entity
+ * Extends the base UserEntity with player-specific functionality
+ * This represents a player user in the domain model
  */
 export class PlayerEntity extends UserEntity {
   constructor(
@@ -20,35 +21,18 @@ export class PlayerEntity extends UserEntity {
       isVerified?: boolean | null;
     } = {}
   ) {
-    super(username, passwordHash, UserRole.PLAYER, options);
+    super(username, passwordHash, {
+      ...options,
+      role: UserRole.PLAYER
+    });
   }
 
-  /**
-   * Player-specific business logic
-   */
-  
-  // Players cannot submit games
-  public canSubmitGames(): boolean {
-    return false;
-  }
-  
-  // Players can rate games
-  public canRateGames(): boolean {
-    return true;
-  }
-  
-  // Players can edit their own profiles
-  public canEditProfile(): boolean {
-    return true;
-  }
-  
   // Player-specific methods
-  public canAddToWishlist(): boolean {
-    return true;
+  public canRateGames(): boolean {
+    return this.isUserVerified() === true;
   }
-  
-  // Players can track game progress
-  public canTrackProgress(): boolean {
-    return true;
+
+  public canSubmitReviews(): boolean {
+    return this.isUserVerified() === true;
   }
 }
