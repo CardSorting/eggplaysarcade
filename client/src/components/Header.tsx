@@ -154,13 +154,13 @@ export function Header() {
                   <Link href="/profile" className="w-full">Profile</Link>
                 </DropdownMenuItem>
                 {user.role === "player" && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/wishlist">My Wishlist</Link>
+                  <DropdownMenuItem>
+                    <Link href="/wishlist" className="w-full">My Wishlist</Link>
                   </DropdownMenuItem>
                 )}
                 {user.role === "game_developer" && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/submit">Submit a Game</Link>
+                  <DropdownMenuItem>
+                    <Link href="/dashboard/submit" className="w-full">Submit a Game</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />

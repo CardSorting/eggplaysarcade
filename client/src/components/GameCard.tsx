@@ -18,8 +18,7 @@ const GameCard = ({ game, categoryName }: GameCardProps) => {
   
   return (
     <Card className="game-card bg-card rounded-xl overflow-hidden">
-      <Link href={`/games/${game.id}`}>
-        <a className="block h-48 w-full overflow-hidden">
+      <Link href={`/games/${game.id}`} className="block h-48 w-full overflow-hidden">
           {imageProps.src ? (
             <img 
               {...imageProps}
@@ -29,7 +28,6 @@ const GameCard = ({ game, categoryName }: GameCardProps) => {
           ) : (
             <Skeleton className="w-full h-48" />
           )}
-        </a>
       </Link>
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
@@ -54,7 +52,7 @@ const GameCard = ({ game, categoryName }: GameCardProps) => {
             asChild
           >
             <Link href={`/games/${game.id}`}>
-              <a>Play Now</a>
+              Play Now
             </Link>
           </Button>
         </div>
