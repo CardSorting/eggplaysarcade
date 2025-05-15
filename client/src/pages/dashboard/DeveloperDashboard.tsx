@@ -24,16 +24,19 @@ export default function DeveloperDashboard() {
   
   // Fetch games created by the current developer
   const { data: myGames = [], isLoading } = useQuery({
-    queryKey: ['/api/games/developer'],
+    queryKey: ['/api/games/developer', user?.id],
     queryFn: async () => {
-      const response = await fetch('/api/games?userId=' + user?.id);
+      const response = await fetch(`/api/games?userId=${user?.id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch developer games');
       }
       const games = await response.json();
       return games.map((game: any) => ({
         ...game,
-        publishedAt: new Date(game.publishedAt)
+        publishedAt: new Date(game.publishedAt),
+        // Ensure players and rating are not null for calculations
+        players: game.players || 0,
+        rating: game.rating || 0
       }));
     },
     enabled: !!user?.id
@@ -90,7 +93,7 @@ export default function DeveloperDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">
-                        {myGames.reduce((sum, game) => sum + (game.players || 0), 0).toLocaleString()}
+                        {myGames.reduce((sum: number, game: any) => sum + game.players, 0).toLocaleString()}
                       </div>
                     </CardContent>
                   </Card>
@@ -105,7 +108,7 @@ export default function DeveloperDashboard() {
                     <CardContent>
                       <div className="text-2xl font-bold">
                         {myGames.length > 0 
-                          ? (myGames.reduce((sum, game) => sum + (game.rating || 0), 0) / myGames.length).toFixed(1)
+                          ? (myGames.reduce((sum: number, game: any) => sum + game.rating, 0) / myGames.length).toFixed(1)
                           : "N/A"
                         }
                       </div>
