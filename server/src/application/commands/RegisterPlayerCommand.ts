@@ -1,14 +1,23 @@
-/**
- * Command for player registration
- * Following CQRS pattern, this command represents the intent to register a player
- */
+import { User, UserRole } from "@shared/schema";
+
 export class RegisterPlayerCommand {
-  constructor(
-    public readonly username: string,
-    public readonly password: string,
-    public readonly email: string | null = null,
-    public readonly displayName: string | null = null,
-    public readonly avatarUrl: string | null = null,
-    public readonly bio: string | null = null
-  ) {}
+  public username: string;
+  public password: string;
+  public email: string | null;
+  public displayName: string | null;
+  public role: UserRole;
+
+  constructor(data: {
+    username: string;
+    password: string;
+    role: UserRole;
+    email?: string | null;
+    displayName?: string | null;
+  }) {
+    this.username = data.username;
+    this.password = data.password;
+    this.email = data.email || null;
+    this.displayName = data.displayName || null;
+    this.role = UserRole.PLAYER; // Ensure it's always a player
+  }
 }

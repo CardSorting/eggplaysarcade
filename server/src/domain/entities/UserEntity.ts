@@ -1,138 +1,75 @@
-import { UserRole } from "../../../../shared/schema";
+import { User, UserRole } from '@shared/schema';
 
 /**
- * Base User Entity
- * This is an abstract class that represents common user properties and behavior
- * Following Domain-Driven Design principles, this entity contains business logic
+ * Base User Entity following Domain-Driven Design principles
+ * This is the core domain entity that represents a user in our system
  */
-export abstract class UserEntity {
-  private id: number | null;
-  private username: string;
-  private passwordHash: string;
-  private role: UserRole;
-  private email: string | null;
-  private avatarUrl: string | null;
-  private bio: string | null;
-  private displayName: string | null;
-  private createdAt: Date;
-  private lastLogin: Date | null;
-  private isVerified: boolean | null;
+export abstract class UserEntity implements Omit<User, 'id'> {
+  public username: string;
+  public password: string;
+  public email: string | null;
+  public role: UserRole;
+  public displayName: string | null;
+  public avatarUrl: string | null;
+  public bio: string | null;
+  public isVerified: boolean | null;
+  public createdAt: Date;
+  public lastLogin: Date | null;
+  public companyName: string | null = null;
+  public portfolio: string | null = null;
 
-  constructor(
-    username: string,
-    passwordHash: string,
-    options: {
-      id?: number;
-      role?: UserRole;
-      email?: string | null;
-      avatarUrl?: string | null;
-      bio?: string | null;
-      displayName?: string | null;
-      createdAt?: Date;
-      lastLogin?: Date | null;
-      isVerified?: boolean | null;
-    } = {}
-  ) {
-    this.id = options.id || null;
-    this.username = username;
-    this.passwordHash = passwordHash;
-    this.role = options.role || UserRole.PLAYER;
-    this.email = options.email || null;
-    this.avatarUrl = options.avatarUrl || null;
-    this.bio = options.bio || null;
-    this.displayName = options.displayName || null;
-    this.createdAt = options.createdAt || new Date();
-    this.lastLogin = options.lastLogin || null;
-    this.isVerified = options.isVerified || false;
+  constructor(data: Partial<User>) {
+    this.username = data.username!;
+    this.password = data.password!;
+    this.email = data.email || null;
+    this.role = data.role!;
+    this.displayName = data.displayName || null;
+    this.avatarUrl = data.avatarUrl || null;
+    this.bio = data.bio || null;
+    this.isVerified = data.isVerified || false;
+    this.createdAt = data.createdAt || new Date();
+    this.lastLogin = data.lastLogin || null;
   }
 
-  // Getters
-  public getId(): number | null {
-    return this.id;
+  /**
+   * Convert entity to a plain object suitable for database storage
+   */
+  public toObject(): Omit<User, 'id'> {
+    return {
+      username: this.username,
+      password: this.password,
+      email: this.email,
+      role: this.role,
+      displayName: this.displayName,
+      avatarUrl: this.avatarUrl,
+      bio: this.bio,
+      isVerified: this.isVerified,
+      createdAt: this.createdAt,
+      lastLogin: this.lastLogin,
+      companyName: this.companyName,
+      portfolio: this.portfolio
+    };
   }
+}
 
-  public getUsername(): string {
-    return this.username;
+/**
+ * Player-specific entity
+ */
+export class PlayerEntity extends UserEntity {
+  constructor(data: Partial<User>) {
+    super(data);
+    this.role = UserRole.PLAYER;
   }
+}
 
-  public getPasswordHash(): string {
-    return this.passwordHash;
-  }
-
-  public getRole(): UserRole {
-    return this.role;
-  }
-
-  public getEmail(): string | null {
-    return this.email;
-  }
-
-  public getAvatarUrl(): string | null {
-    return this.avatarUrl;
-  }
-
-  public getBio(): string | null {
-    return this.bio;
-  }
-
-  public getDisplayName(): string | null {
-    return this.displayName;
-  }
-
-  public getCreatedAt(): Date {
-    return this.createdAt;
-  }
-
-  public getLastLogin(): Date | null {
-    return this.lastLogin;
-  }
-
-  public isUserVerified(): boolean | null {
-    return this.isVerified;
-  }
-
-  // Setters with validation logic
-  public setUsername(username: string): void {
-    if (!username || username.trim().length < 3) {
-      throw new Error("Username must be at least 3 characters long");
-    }
-    this.username = username;
-  }
-
-  public setEmail(email: string | null): void {
-    // Simple email validation
-    if (email && !email.includes('@')) {
-      throw new Error("Invalid email format");
-    }
-    this.email = email;
-  }
-
-  public setDisplayName(displayName: string | null): void {
-    this.displayName = displayName;
-  }
-
-  public setBio(bio: string | null): void {
-    this.bio = bio;
-  }
-
-  public setAvatarUrl(avatarUrl: string | null): void {
-    this.avatarUrl = avatarUrl;
-  }
-
-  public setLastLogin(date: Date | null): void {
-    this.lastLogin = date;
-  }
-
-  public setVerified(isVerified: boolean): void {
-    this.isVerified = isVerified;
-  }
-
-  // Business logic methods
-  public updateLastLogin(): void {
-    this.lastLogin = new Date();
-  }
-
-  public verify(): void {
-    this.isVerified = true;
+/**
+ * Developer-specific entity with additional fields
+ */
+export class DeveloperEntity extends UserEntity {
+  constructor(data: Partial<User>) {
+    super(data);
+    this.role = UserRole.GAME_DEVELOPER;
+    this.companyName = data.companyName || null;
+    this.portfolio = data.portfolio || null;
   }
 }
