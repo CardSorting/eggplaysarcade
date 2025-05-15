@@ -58,7 +58,7 @@ export default function DeveloperDashboard() {
         </div>
         
         <Tabs defaultValue="mygames" className="space-y-4">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="mygames">My Games</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
