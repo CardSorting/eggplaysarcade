@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Original light theme variables (keeping these for reference) */
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 60 4.8% 95.9%;
+  --secondary-foreground: 24 9.8% 10%;
+  --accent: 60 4.8% 95.9%;
+  --accent-foreground: 24 9.8% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 20 14.3% 4.1%;
+  --radius: 0.5rem;
+
+  /* GameVault theme colors */
+  --background: 0 0% 7%;  /* #121212 */
+  --foreground: 0 0% 95.3%; /* #F3F4F6 */
+  --muted: 0 0% 15%; /* #262626 */
+  --muted-foreground: 0 0% 60%; /* #999999 */
+  --popover: 0 0% 7%; /* #121212 */
+  --popover-foreground: 0 0% 95.3%; /* #F3F4F6 */
+  --card: 0 0% 12%; /* #1E1E1E */
+  --card-foreground: 0 0% 95.3%; /* #F3F4F6 */
+  --border: 0 0% 20%; /* #333333 */
+  --input: 0 0% 20%; /* #333333 */
+  --primary: 267 71% 50%; /* #6D28D9 - violet */
+  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --secondary: 160 64% 36%; /* #10B981 - emerald */
+  --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+  --accent: 38 92% 50%; /* #F59E0B - amber */
+  --accent-foreground: 0 0% 100%; /* #FFFFFF */
+  --destructive: 0 84.2% 60.2%; /* original destructive */
+  --destructive-foreground: 0 0% 98%; /* original destructive foreground */
+  --ring: 267 71% 50%; /* Same as primary */
+  --radius: 0.5rem;
+
+  /* Chart colors (keeping original) */
+  --chart-1: 267 71% 50%;
+  --chart-2: 160 64% 36%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 0 84.2% 60.2%;
+  --chart-5: 207 90% 54%;
+
+  /* Sidebar variables - using same values as main theme since we're not using separate sidebar */
+  --sidebar-background: 0 0% 7%;
+  --sidebar-foreground: 0 0% 95.3%;
+  --sidebar-primary: 267 71% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 38 92% 50%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 0 0% 20%;
+  --sidebar-ring: 267 71% 50%;
+}
+
+.dark {
+  /* We're always using dark theme for GameVault */
+  --background: 0 0% 7%;  /* #121212 */
+  --foreground: 0 0% 95.3%; /* #F3F4F6 */
+  --muted: 0 0% 15%; /* #262626 */
+  --muted-foreground: 0 0% 60%; /* #999999 */
+  --popover: 0 0% 7%; /* #121212 */
+  --popover-foreground: 0 0% 95.3%; /* #F3F4F6 */
+  --card: 0 0% 12%; /* #1E1E1E */
+  --card-foreground: 0 0% 95.3%; /* #F3F4F6 */
+  --border: 0 0% 20%; /* #333333 */
+  --input: 0 0% 20%; /* #333333 */
+  --primary: 267 71% 50%; /* #6D28D9 - violet */
+  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --secondary: 160 64% 36%; /* #10B981 - emerald */
+  --secondary-foreground: 0 0% 100%; /* #FFFFFF */
+  --accent: 38 92% 50%; /* #F59E0B - amber */
+  --accent-foreground: 0 0% 100%; /* #FFFFFF */
+  --destructive: 0 84.2% 60.2%; /* original destructive */
+  --destructive-foreground: 0 0% 98%; /* original destructive foreground */
+  --ring: 267 71% 50%; /* Same as primary */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+.font-heading {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.font-body {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-game {
+  font-family: 'Press Start 2P', cursive;
+}
+
+/* Transitions for cards and buttons */
+.game-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+}
+
+.btn-primary {
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(109, 40, 217, 0.4);
+}
+
+.btn-secondary {
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Navigation link animation */
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background-color: hsl(var(--accent));
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after, .nav-link.active::after {
+  width: 100%;
+}
