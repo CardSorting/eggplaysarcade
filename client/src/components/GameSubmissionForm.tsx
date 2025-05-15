@@ -104,7 +104,7 @@ const GameSubmissionForm = () => {
     onSuccess: (data) => {
       toast({
         title: "Game submitted successfully!",
-        description: "Your game has been uploaded and is now available for others to play.",
+        description: "Your game has been uploaded to Backblaze B2 and is now available for others to play.",
       });
       setLocation(`/games/${data.id}`);
     },

@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
+import { useB2Image } from "@/hooks/use-b2-file";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface GameCardProps {
   game: Game;
@@ -11,15 +13,22 @@ interface GameCardProps {
 }
 
 const GameCard = ({ game, categoryName }: GameCardProps) => {
+  // Get the image props with B2 integration
+  const imageProps = useB2Image(game.thumbnailUrl);
+  
   return (
     <Card className="game-card bg-card rounded-xl overflow-hidden">
       <Link href={`/games/${game.id}`}>
         <a className="block h-48 w-full overflow-hidden">
-          <img 
-            src={game.thumbnailUrl} 
-            alt={game.title} 
-            className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
-          />
+          {imageProps.src ? (
+            <img 
+              {...imageProps}
+              alt={game.title} 
+              className={`w-full h-48 object-cover hover:scale-105 transition-transform duration-300 ${imageProps.className}`}
+            />
+          ) : (
+            <Skeleton className="w-full h-48" />
+          )}
         </a>
       </Link>
       <CardContent className="p-4">

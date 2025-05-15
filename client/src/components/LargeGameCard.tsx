@@ -3,12 +3,16 @@ import { Game } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star, User } from "lucide-react";
+import { useB2Image } from "@/hooks/use-b2-file";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LargeGameCardProps {
   game: Game;
 }
 
 const LargeGameCard = ({ game }: LargeGameCardProps) => {
+  // Get the image props with B2 integration
+  const imageProps = useB2Image(game.thumbnailUrl);
   const stars = Array(5).fill(0).map((_, index) => {
     if (index < Math.floor(game.rating || 0)) return "full";
     if (index === Math.floor(game.rating || 0) && game.rating % 1 >= 0.5) return "half";
